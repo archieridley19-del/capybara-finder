@@ -1,0 +1,23 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: Calibration anchors must reject
+        # The headline guarantee: if the verifier stops rejecting known-saturated
+        # niches, the build fails. No network or API keys needed.
+        run: python -m capyfind --fixtures anchors

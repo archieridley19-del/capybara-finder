@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+
+# Local tool settings
+.claude/
+
+# Result databases and exports -- these hold API-derived data
+*.db
+*.csv
+!fixtures/*.csv
+
+# Downloaded installers
+*.exe
