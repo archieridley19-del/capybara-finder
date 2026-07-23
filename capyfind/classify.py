@@ -32,10 +32,27 @@ CONTENT_FARMS = {
 }
 COMMUNITIES = {
     "reddit.com", "quora.com", "stackoverflow.com", "stackexchange.com",
+    "softwarerecs.stackexchange.com", "webapps.stackexchange.com",
     "youtube.com", "facebook.com", "twitter.com", "x.com", "linkedin.com",
     "tiktok.com", "pinterest.com", "discord.com", "news.ycombinator.com",
-    "mumsnet.com", "moneysavingexpert.com", "trustatrader.com",
+    "ycombinator.com", "trustatrader.com",
+    # UK trade and small-business forums -- these are reach venues, and must
+    # never be mistaken for competing products.
+    "landlordzone.co.uk", "propertytribes.com", "propertyhub.net",
+    "ukbusinessforums.co.uk", "accountingweb.co.uk", "contractoruk.com",
+    "screwfix.com", "diynot.com", "electriciansforums.net",
+    "moneysavingexpert.com", "mumsnet.com", "avforums.com",
 }
+#: Communities that are *not* a niche gathering place. Finding your audience on
+#: Hacker News or YouTube is not a distribution channel, so these never count
+#: toward the reach score even though they are useful demand evidence.
+GENERIC_VENUES = {
+    "news.ycombinator.com", "ycombinator.com", "quora.com", "youtube.com",
+    "twitter.com", "x.com", "linkedin.com", "tiktok.com", "pinterest.com",
+    "stackoverflow.com", "stackexchange.com", "discord.com", "facebook.com",
+    "medium.com", "mumsnet.com",
+}
+
 REFERENCE = {"wikipedia.org", "wiktionary.org", "britannica.com"}
 MARKETPLACES = {"amazon.co.uk", "amazon.com", "ebay.co.uk", "etsy.com"}
 APP_STORES = {

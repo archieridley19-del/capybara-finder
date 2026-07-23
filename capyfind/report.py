@@ -53,13 +53,22 @@ def render_report(run: Run, show_anchors: bool = True) -> str:
 
     if not run.verified:
         add("VERDICT: UNVERIFIED")
-        add(f"  {run.kill_reason}")
+        for line in _wrap(run.kill_reason, 74):
+            add(f"  {line}")
         add("")
-        add(
-            "  No score is shown. Nothing was retrieved, so any judgement here\n"
-            "  would be the model guessing -- which is the exact failure this\n"
-            "  tool exists to prevent."
-        )
+        if run.n_productive > 0 and not run.supply_assessed:
+            add(
+                "  No score is shown. Demand evidence alone cannot carry a\n"
+                "  verdict: with no web search, page one was never looked at,\n"
+                "  so 'no competitor found' would only mean 'nobody looked'.\n"
+                "  That reads a saturated niche as a wide-open one."
+            )
+        else:
+            add(
+                "  No score is shown. Nothing usable was retrieved, so any\n"
+                "  judgement here would be the model guessing -- the exact\n"
+                "  failure this tool exists to prevent."
+            )
         return "\n".join(out)
 
     # --- argument first --------------------------------------------------

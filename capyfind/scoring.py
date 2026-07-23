@@ -241,6 +241,14 @@ def kill_reason(run: Run) -> str:
         n = run.n_retrievals
         if n == 0:
             return "UNVERIFIED: no retrieval attempted"
+        if run.n_productive > 0 and not run.supply_assessed:
+            # The dangerous case: demand evidence but nobody looked at page one.
+            # Scoring supply here would read "saturated" as "wide open".
+            return (
+                "UNVERIFIED: demand sources returned results but no web search "
+                "ran, so supply was never assessed. Set SERPER_API_KEY, "
+                "BRAVE_API_KEY or SERPAPI_API_KEY."
+            )
         errors = {f.message for f in run.failures} or {
             r.error for r in run.retrievals if r.error
         }

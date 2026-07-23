@@ -107,23 +107,67 @@ opened their wallet and resents the price — are weighted highest.
 
 ## Data sources
 
-Pluggable behind one interface (`providers/base.py`). Set any of these and it
-activates automatically:
+Pluggable behind one interface (`providers/base.py`). A role can hold several
+providers — the social role fans out across all four, because no single forum
+covers a niche audience.
 
-| Role | Provider | Env var |
-|---|---|---|
-| web | Serper | `SERPER_API_KEY` |
-| web | Brave Search | `BRAVE_API_KEY` |
-| web | SerpAPI | `SERPAPI_API_KEY` |
-| social | Reddit official API | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` |
-| suggest | Google autocomplete | on by default, no key |
-| trends | Google Trends | `CAPYFIND_ENABLE_TRENDS=1` (stub) |
+| Role | Provider | Env var | Cost |
+|---|---|---|---|
+| web | Serper | `SERPER_API_KEY` | paid |
+| web | Brave Search | `BRAVE_API_KEY` | free tier |
+| web | SerpAPI | `SERPAPI_API_KEY` | paid |
+| social | Software Recommendations (Stack Exchange) | none | **free** |
+| social | Hacker News (Algolia) | none | **free** |
+| social | Reddit official API | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | free |
+| social | UK trade forums | uses the web provider | 1 search credit |
+| suggest | Google autocomplete | none | **free** |
+| trends | Google Trends | `CAPYFIND_ENABLE_TRENDS=1` | stub |
 
-Also: `CAPYFIND_COUNTRY` (default `uk`).
+Also: `CAPYFIND_COUNTRY` (default `uk`), `CAPYFIND_SE_SITES`,
+`REDDIT_USER_AGENT`, `STACKEXCHANGE_KEY` (raises the 300/day quota),
+and `CAPYFIND_DISABLE_HN` / `CAPYFIND_DISABLE_STACKEXCHANGE`.
 
-**Without a web key, runs come back `UNVERIFIED`.** That is deliberate. The
-tool degrades to honest silence rather than to guessing, and it tells you which
-role is missing and why.
+### Why these four forums
+
+Each answers a different question, and they are queried in cost order so the
+free ones run first:
+
+- **Software Recommendations** is a whole Stack Exchange site of people asking
+  "is there a tool that does X" — the highest-signal demand source available.
+  Low recall (it is a small site), but a hit is worth a lot.
+- **Hacker News** catches `Show HN` launches and abandoned attempts. For the
+  bank-statement anchor it surfaces two competing launches on its own.
+- **Reddit** covers the trade subreddits, and is the main source of *named
+  reach venues* — `r/uklandlords` is a distribution channel, HN is not.
+- **UK trade forums** — LandlordZONE, AccountingWEB, UK Business Forums,
+  Screwfix Community, PropertyTribes, MoneySavingExpert — are where sole
+  traders actually post, and they are on none of the above. They have no APIs,
+  so they are reached with one OR-joined `site:` query through the web
+  provider, capped at a single search credit per candidate.
+
+Query shape matters and differs by API: Stack Exchange ANDs every term, so
+question scaffolding is stripped before sending. Hacker News ORs them, so hits
+are filtered by term overlap — without that, a search for certificate expiry
+returns threads about Groupon's business model, and noise becomes "demand
+evidence".
+
+### Reddit setup
+
+Create a free **script** app at
+[reddit.com/prefs/apps](https://www.reddit.com/prefs/apps), then:
+
+```bash
+setx REDDIT_CLIENT_ID "your-client-id"
+setx REDDIT_CLIENT_SECRET "your-secret"
+```
+
+### Why a web key is still required
+
+Runs without a web provider come back `UNVERIFIED` even when the free demand
+sources return plenty. This is deliberate and load-bearing: with no web search,
+page one was never looked at, so "no dedicated competitor found" only means
+"nobody looked" — which scores the most saturated niche on the list as wide
+open. Demand evidence alone cannot carry a verdict.
 
 Google SERP scraping is deliberately not implemented — it breaks their terms
 and gets blocked within a few dozen requests, which is the exact failure mode
@@ -167,7 +211,7 @@ personal trainers. Anything else falls back to generic frames — use
 python -m unittest discover -s tests -t . -v
 ```
 
-62 tests, all offline.
+96 tests, all offline.
 
 ## What this tool is not
 
