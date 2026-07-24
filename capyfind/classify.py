@@ -90,7 +90,8 @@ LISTICLE_TITLE = re.compile(
 )
 LISTICLE_PATH = re.compile(
     r"/(blog|blogs|article|articles|news|guide|guides|resources|learn|academy|"
-    r"insights|posts?|stories|compare|comparison|alternatives|reviews?|wiki|help)/",
+    r"insights|posts?|stories|compare|comparison|alternatives|reviews?|wiki|help)"
+    r"(/|$|\?|#)",  # also match a bare /blog with no trailing slash
     re.IGNORECASE,
 )
 PRICING_HINT = re.compile(

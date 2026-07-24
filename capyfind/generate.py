@@ -333,6 +333,140 @@ VERTICALS: dict[str, dict[str, list]] = {
         "conversions": [("booking calendar", "spreadsheet"),
                         ("expenses", "tax return")],
     },
+    "tutors": {
+        "aliases": ["tutors", "tutor", "private tutor", "tuition",
+                    "exam tutor", "tutoring"],
+        "regulations": [
+            "dbs check", "public liability insurance", "safeguarding training",
+            "gdpr consent", "online safety policy",
+        ],
+        "documents": [
+            "tuition agreement", "lesson record", "progress report",
+            "parent contract", "student assessment", "invoice",
+        ],
+        "professions": ["tutor", "private tutor", "tuition centre manager"],
+        "tasks": [
+            "scheduling lessons", "tracking student progress",
+            "invoicing parents", "chasing payments", "tracking exam dates",
+            "managing cancellations",
+        ],
+        "conversions": [("lesson log", "invoice"), ("progress notes", "report")],
+    },
+    "private hire drivers": {
+        "aliases": ["private hire drivers", "taxi drivers", "private hire",
+                    "minicab", "uber drivers", "taxi driver", "cab driver"],
+        "regulations": [
+            "private hire licence", "dbs check", "medical certificate",
+            "vehicle mot", "hackney carriage licence",
+            "safeguarding awareness", "topographical test",
+        ],
+        "documents": [
+            "driver licence record", "vehicle inspection", "insurance certificate",
+            "driver log", "expense record", "earnings record",
+        ],
+        "professions": ["taxi driver", "private hire driver"],
+        "tasks": [
+            "tracking licence expiry", "logging mileage", "tracking earnings",
+            "managing expenses", "tracking vehicle service dates",
+            "tracking working hours",
+        ],
+        "conversions": [("mileage log", "tax return"), ("earnings", "spreadsheet")],
+    },
+    "mobile mechanics": {
+        "aliases": ["mobile mechanics", "mobile mechanic", "garage",
+                    "mot tester", "car mechanic", "vehicle repair"],
+        "regulations": [
+            "mot testing licence", "public liability insurance",
+            "waste oil disposal", "coshh assessment", "motor trade insurance",
+        ],
+        "documents": [
+            "job sheet", "vehicle inspection report", "service record",
+            "parts record", "invoice", "vhc report",
+        ],
+        "professions": ["mobile mechanic", "garage owner", "mot tester"],
+        "tasks": [
+            "booking jobs", "tracking service reminders", "invoicing customers",
+            "tracking parts stock", "chasing payments", "tracking mot due dates",
+        ],
+        "conversions": [("job sheet", "invoice"), ("service history", "reminder")],
+    },
+    "gardeners": {
+        "aliases": ["gardeners", "gardener", "landscaper", "landscaping",
+                    "grounds maintenance", "tree surgeon", "arborist"],
+        "regulations": [
+            "waste carrier licence", "public liability insurance",
+            "pesticide certificate", "chainsaw certificate", "risk assessment",
+        ],
+        "documents": [
+            "quote", "job sheet", "risk assessment", "method statement",
+            "waste transfer note", "invoice",
+        ],
+        "professions": ["gardener", "landscaper", "tree surgeon"],
+        "tasks": [
+            "quoting jobs", "scheduling visits", "invoicing clients",
+            "tracking equipment service", "chasing payments",
+            "tracking waste disposal",
+        ],
+        "conversions": [("quote", "invoice"), ("job diary", "schedule")],
+    },
+    "sports coaches": {
+        "aliases": ["sports coaches", "football coach", "grassroots club",
+                    "sports club", "coaching", "swim coach", "rugby coach"],
+        "regulations": [
+            "dbs check", "safeguarding certificate", "first aid certificate",
+            "coaching qualification", "public liability insurance",
+            "concussion protocol",
+        ],
+        "documents": [
+            "player registration", "consent form", "medical form",
+            "session plan", "attendance register", "incident report",
+        ],
+        "professions": ["sports coach", "club secretary", "football coach"],
+        "tasks": [
+            "tracking player registrations", "collecting subs",
+            "tracking dbs expiry", "scheduling training",
+            "managing consent forms", "chasing membership fees",
+        ],
+        "conversions": [("registration form", "spreadsheet"), ("subs", "invoice")],
+    },
+    "removals": {
+        "aliases": ["removals", "man and van", "removal company",
+                    "house clearance", "moving company"],
+        "regulations": [
+            "waste carrier licence", "goods in transit insurance",
+            "public liability insurance", "motor insurance", "working time record",
+        ],
+        "documents": [
+            "quote", "inventory", "condition report",
+            "waste transfer note", "invoice", "job sheet",
+        ],
+        "professions": ["removal company", "man and van", "house clearance"],
+        "tasks": [
+            "quoting jobs", "scheduling moves", "invoicing customers",
+            "tracking van maintenance", "chasing payments",
+            "tracking driver hours",
+        ],
+        "conversions": [("inventory", "quote"), ("job", "invoice")],
+    },
+    "online resellers": {
+        "aliases": ["online resellers", "vinted sellers", "depop sellers",
+                    "ebay sellers", "reseller", "amazon fba", "online sellers"],
+        "regulations": [
+            "vat registration", "distance selling regulations", "gpsr compliance",
+            "consumer rights", "trading standards",
+        ],
+        "documents": [
+            "postage label", "returns record", "stock record",
+            "profit tracker", "vat record", "customs cn22",
+        ],
+        "professions": ["reseller", "ebay seller", "amazon fba seller"],
+        "tasks": [
+            "tracking cost of goods", "calculating platform fees",
+            "tracking postage costs", "managing returns",
+            "tracking profit per item", "tracking vat threshold",
+        ],
+        "conversions": [("sales csv", "profit tracker"), ("orders", "postage label")],
+    },
 }
 
 GENERIC = {
@@ -460,6 +594,98 @@ def generate_candidates(
                 candidates.append(qualified)
 
     return candidates[:limit]
+
+
+#: Probes sent to autocomplete. Tool/task-seeking framings first, so the real
+#: completions lean toward "is there something that does X" rather than noise.
+SUGGEST_STEMS = (
+    "app for {s}",
+    "is there an app to {s}",
+    "software for {s}",
+    "{s} app",
+    "{s} software",
+    "{s} template",
+    "how to {s}",
+    "best app for {s}",
+    "{s}",
+)
+
+#: Autocomplete junk that never makes a testable software niche.
+_SUGGEST_STOP = re.compile(
+    r"\b(near me|jobs?|salary|salaries|meaning|definition|wikipedia|reddit|"
+    r"youtube|login|sign in|nhs|gov\.uk|bbc|amazon|discount code|vs |reviews?)\b",
+    re.IGNORECASE,
+)
+
+
+def autocomplete_candidates(seed, suggest_provider, limit=120):
+    """Harvest the actual phrases people type, from Google autocomplete.
+
+    This is the "actively find words worth searching" path: it works for ANY
+    topic with no hand-written lexicon, using real search-suggestion data. Needs
+    a suggest provider (keyless); returns [] if none is available.
+    """
+    if suggest_provider is None:
+        return []
+
+    seed = seed.strip()
+    out: list[str] = []
+    seen: set[str] = set()
+    for stem in SUGGEST_STEMS:
+        query = stem.format(s=seed)
+        try:
+            results, _ = suggest_provider.search(query, limit=10)
+        except Exception:
+            continue
+        for result in results:
+            phrase = _clean(result.title)
+            if not phrase or phrase in seen:
+                continue
+            if len(phrase.split()) < 2 or _SUGGEST_STOP.search(phrase):
+                continue
+            seen.add(phrase)
+            out.append(phrase)
+        if len(out) >= limit:
+            break
+    return out[:limit]
+
+
+def build_candidates(
+    seed,
+    *,
+    providers=None,
+    limit=120,
+    country="",
+    tasks_file=None,
+):
+    """The universal entry point used by discovery.
+
+    Merges three sources so ANY seed produces real candidates without waiting on
+    a hand-written lexicon:
+      1. live autocomplete suggestions (works for anything),
+      2. the built-in lexicon, if one happens to match,
+      3. an optional user tasks file.
+    For an unknown seed this is autocomplete-first; for a known vertical the
+    curated phrases lead and autocomplete broadens them.
+    """
+    name, _ = match_vertical(seed)
+    lexicon = generate_candidates(
+        seed, limit=limit, country=country, tasks_file=tasks_file
+    )
+
+    suggest = None
+    if providers is not None:
+        from .providers import KIND_SUGGEST
+
+        suggest = providers.get(KIND_SUGGEST)
+    auto = autocomplete_candidates(seed, suggest, limit=limit)
+
+    first, second = (auto, lexicon) if name == "generic" else (lexicon, auto)
+    merged: list[str] = []
+    for phrase in first + second:
+        if phrase and phrase not in merged:
+            merged.append(phrase)
+    return merged[:limit]
 
 
 def llm_tasks(seed: str, n: int = 60) -> list[str]:
