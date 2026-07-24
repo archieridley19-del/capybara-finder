@@ -42,7 +42,17 @@ CREATE TABLE IF NOT EXISTS runs (
     PRIMARY KEY (candidate, depth)
 );
 CREATE INDEX IF NOT EXISTS idx_runs_seed ON runs(seed);
+
+CREATE TABLE IF NOT EXISTS marks (
+    candidate   TEXT PRIMARY KEY,
+    status      TEXT NOT NULL DEFAULT 'new',
+    notes       TEXT NOT NULL DEFAULT '',
+    updated_at  REAL NOT NULL
+);
 """
+
+#: The workflow states a lead can sit in while you work it.
+LEAD_STATUSES = ("new", "shortlist", "chasing", "rejected")
 
 
 class Store:
@@ -55,7 +65,9 @@ class Store:
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        conn = sqlite3.connect(self.path)
+        # timeout lets a background sweep and the web UI share the file without
+        # tripping "database is locked" when their writes overlap.
+        conn = sqlite3.connect(self.path, timeout=30)
         conn.row_factory = sqlite3.Row
         try:
             yield conn
@@ -142,7 +154,17 @@ class Store:
         sql += " ORDER BY verified DESC, composite DESC"
         with self._connect() as conn:
             rows = conn.execute(sql, args).fetchall()
-        return [json.loads(r["payload"]) for r in rows]
+            marks = {m["candidate"]: m for m in conn.execute(
+                "SELECT candidate, status, notes FROM marks"
+            ).fetchall()}
+        out = []
+        for row in rows:
+            payload = json.loads(row["payload"])
+            mark = marks.get(payload["candidate"])
+            payload["lead_status"] = mark["status"] if mark else "new"
+            payload["lead_notes"] = mark["notes"] if mark else ""
+            out.append(payload)
+        return out
 
     def clear_runs(self, seed: str | None = None) -> int:
         with self._connect() as conn:
@@ -151,3 +173,31 @@ class Store:
             else:
                 cur = conn.execute("DELETE FROM runs")
             return cur.rowcount
+
+    # --- lead marks ------------------------------------------------------
+
+    def set_mark(
+        self, candidate: str, status: str | None = None, notes: str | None = None
+    ) -> None:
+        if status is not None and status not in LEAD_STATUSES:
+            raise ValueError(f"unknown lead status {status!r}")
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT status, notes FROM marks WHERE candidate = ?", (candidate,)
+            ).fetchone()
+            new_status = status if status is not None else (row["status"] if row else "new")
+            new_notes = notes if notes is not None else (row["notes"] if row else "")
+            conn.execute(
+                "INSERT OR REPLACE INTO marks (candidate, status, notes, updated_at) "
+                "VALUES (?,?,?,?)",
+                (candidate, new_status, new_notes, time.time()),
+            )
+
+    def get_mark(self, candidate: str) -> dict[str, str]:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT status, notes FROM marks WHERE candidate = ?", (candidate,)
+            ).fetchone()
+        if row is None:
+            return {"status": "new", "notes": ""}
+        return {"status": row["status"], "notes": row["notes"]}
