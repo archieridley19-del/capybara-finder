@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from collections import Counter
 
-from .classify import classify_result, domain_in, COMMUNITIES
+from .classify import GENERIC_VENUES, classify_result, domain_in
 from .models import Evidence, SearchResult, Signal
 
 ASK_PATTERNS = re.compile(
@@ -189,8 +189,14 @@ def pay_signals(competitors, threads: list[SearchResult]) -> list[Signal]:
 
 
 def reach_evidence(threads: list[SearchResult], web: list[SearchResult]) -> list[Evidence]:
-    """Name the specific places these people gather. An audience you cannot
-    reach kills an otherwise good idea, so unnamed venues score zero."""
+    """Name the specific places these people gather.
+
+    Only *niche* venues count. A named subreddit or a trade forum is a
+    distribution channel; Hacker News, YouTube and Stack Overflow are not, so
+    they are excluded even though they are perfectly good demand evidence. An
+    audience you cannot reach kills an otherwise good idea, so an empty list
+    here scores zero rather than being fudged upward.
+    """
     found: dict[str, Evidence] = {}
 
     for thread in threads:
@@ -199,7 +205,7 @@ def reach_evidence(threads: list[SearchResult], web: list[SearchResult]) -> list
             found.setdefault(
                 key,
                 Evidence(
-                    claim=f"community: r/{match}",
+                    claim=f"subreddit: r/{match}",
                     url=f"https://reddit.com/r/{match}",
                     snippet=thread.title[:150],
                     source="reddit",
@@ -207,12 +213,14 @@ def reach_evidence(threads: list[SearchResult], web: list[SearchResult]) -> list
             )
 
     for result in web + threads:
+        if domain_in(result.domain, GENERIC_VENUES) or "reddit.com" in result.domain:
+            continue
         kind, _ = classify_result(result)
-        if kind == "community" and not domain_in(result.domain, {"reddit.com"}):
+        if kind == "community":
             found.setdefault(
                 result.domain,
                 Evidence(
-                    claim=f"community/forum: {result.domain}",
+                    claim=f"trade forum: {result.domain}",
                     url=result.url,
                     snippet=result.title[:150],
                     source=result.domain,

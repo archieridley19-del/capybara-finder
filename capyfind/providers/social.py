@@ -83,7 +83,17 @@ class RedditProvider(SearchProvider):
         )
 
     def why_unavailable(self) -> str:
-        return "REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET are not set"
+        return (
+            "REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set. Note the official "
+            "API now needs approval (Responsible Builder policy) -- the "
+            "reddit-web provider reaches Reddit through your web key with no "
+            "approval, and runs automatically once a web provider is set."
+        )
+
+    @property
+    def user_agent(self) -> str:
+        # Reddit asks for a descriptive UA and rate-limits generic ones harder.
+        return os.environ.get("REDDIT_USER_AGENT", USER_AGENT)
 
     def _get_token(self) -> str:
         if self._token and time.time() < self._token_expires:
@@ -99,7 +109,7 @@ class RedditProvider(SearchProvider):
             data=body,
             headers={
                 "Authorization": f"Basic {basic}",
-                "User-Agent": USER_AGENT,
+                "User-Agent": self.user_agent,
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             method="POST",
@@ -115,9 +125,17 @@ class RedditProvider(SearchProvider):
             self.endpoint,
             headers={
                 "Authorization": f"Bearer {self._get_token()}",
-                "User-Agent": USER_AGENT,
+                "User-Agent": self.user_agent,
             },
-            params={"q": query, "limit": limit, "sort": "relevance", "type": "link"},
+            params={
+                "q": query,
+                "limit": limit,
+                "sort": "relevance",
+                "type": "link",
+                # 'all' rather than the default year, so recurrence across
+                # multiple years is visible.
+                "t": "all",
+            },
         )
         results = []
         for i, child in enumerate(data.get("data", {}).get("children", [])[:limit]):

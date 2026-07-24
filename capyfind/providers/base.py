@@ -25,6 +25,9 @@ class SearchProvider(ABC):
     kind: str = KIND_WEB
     #: True when results are real retrievals; False for estimates or fixtures.
     live: bool = True
+    #: Cap on queries per candidate. Free sources can afford several; ones that
+    #: burn paid search credits are capped at one.
+    max_queries: int = 3
 
     def __init__(self, store: Store | None = None) -> None:
         self.store = store
@@ -53,6 +56,7 @@ class SearchProvider(ABC):
                 return results, Retrieval(
                     provider=self.name,
                     query=query,
+                    role=self.kind,
                     n_results=len(results),
                     ok=True,
                     from_cache=True,
@@ -63,6 +67,7 @@ class SearchProvider(ABC):
             return [], Retrieval(
                 provider=self.name,
                 query=query,
+                role=self.kind,
                 n_results=0,
                 ok=False,
                 error=self.why_unavailable(),
@@ -74,6 +79,7 @@ class SearchProvider(ABC):
             return [], Retrieval(
                 provider=self.name,
                 query=query,
+                role=self.kind,
                 n_results=0,
                 ok=False,
                 error=f"{type(exc).__name__}: {exc}",
@@ -90,6 +96,7 @@ class SearchProvider(ABC):
         return results, Retrieval(
             provider=self.name,
             query=query,
+            role=self.kind,
             n_results=len(results),
             ok=True,
             url=endpoint,

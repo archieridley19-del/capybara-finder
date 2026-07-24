@@ -10,11 +10,14 @@ Stdlib only. Two behaviours matter for batch runs:
 
 from __future__ import annotations
 
+import gzip
+import io
 import json
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -76,6 +79,16 @@ class Pacer:
 _DEFAULT_PACER = Pacer()
 
 
+def _decode(raw: bytes, encoding: str) -> str:
+    """Some APIs (Stack Exchange notably) always respond gzipped."""
+    encoding = (encoding or "").lower()
+    if encoding == "gzip":
+        raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
+    elif encoding == "deflate":
+        raw = zlib.decompress(raw, -zlib.MAX_WBITS)
+    return raw.decode("utf-8", errors="replace")
+
+
 def request_json(
     url: str,
     *,
@@ -97,7 +110,11 @@ def request_json(
         url = f"{url}?{urllib.parse.urlencode(params)}"
 
     body = json.dumps(payload).encode() if payload is not None else None
-    request_headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+    request_headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip, deflate",
+    }
     if body is not None:
         request_headers["Content-Type"] = "application/json"
     if headers:
@@ -112,10 +129,10 @@ def request_json(
         )
         try:
             with urllib.request.urlopen(req, timeout=timeout) as response:
-                raw = response.read().decode("utf-8", errors="replace")
+                raw = _decode(response.read(), response.headers.get("Content-Encoding"))
             return json.loads(raw) if raw.strip() else {}
         except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")[:200]
+            detail = _decode(exc.read(), exc.headers.get("Content-Encoding"))[:200]
             last_error = f"HTTP {exc.code}: {detail}"
             # 4xx other than rate-limiting will not fix themselves.
             if exc.code not in (408, 425, 429) and exc.code < 500:

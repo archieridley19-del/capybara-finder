@@ -46,6 +46,8 @@ class Retrieval:
     ok: bool = True
     error: str | None = None
     from_cache: bool = False
+    #: Which role produced this -- "web", "social", "suggest", "trends".
+    role: str = "web"
 
     @property
     def productive(self) -> bool:
@@ -220,9 +222,21 @@ class Run:
         return sum(1 for r in self.retrievals if r.productive)
 
     @property
+    def supply_assessed(self) -> bool:
+        """Did any web search actually run?
+
+        Without one, page one was never looked at, so "no competitor found"
+        means "nobody looked" -- which would turn a saturated niche into a
+        maximum supply_weak score. Demand-side sources alone cannot carry a
+        verdict.
+        """
+        return any(r.productive and r.role == "web" for r in self.retrievals)
+
+    @property
     def verified(self) -> bool:
-        """Gate for every result. No fetches or no sources => UNVERIFIED."""
-        return self.n_productive > 0 and bool(self.results)
+        """Gate for every result. Needs sources *and* an assessable supply
+        side; either missing => UNVERIFIED."""
+        return self.n_productive > 0 and bool(self.results) and self.supply_assessed
 
     # --- headline ratio --------------------------------------------------
 

@@ -98,17 +98,22 @@ def verify(
             run.failures.append(Failure("suggest", str(retrieval.error)))
         suggestions.extend(results)
 
-    social = providers.get(KIND_SOCIAL)
-    if social is None:
-        run.failures.append(
-            Failure("social", "no social provider (set REDDIT_CLIENT_ID/SECRET)")
-        )
-    else:
-        for query in social_query_plan(candidate)[: cfg.social_queries]:
+    # Fan out across every usable social source. Each covers a different
+    # audience -- Software Recommendations and HN catch the "is there a tool
+    # that..." asks, Reddit catches the trade subreddits, and the forum
+    # provider reaches UK sole traders who are on none of the above.
+    social_providers = providers.all(KIND_SOCIAL)
+    if not social_providers:
+        run.failures.append(Failure("social", "no social provider available"))
+    for social in social_providers:
+        budget = min(cfg.social_queries, social.max_queries)
+        for query in social_query_plan(candidate)[:budget]:
             results, retrieval = social.search(query, limit=cfg.results_per_query)
             run.retrievals.append(retrieval)
             if not retrieval.ok:
-                run.failures.append(Failure("social", f"{query!r}: {retrieval.error}"))
+                run.failures.append(
+                    Failure(social.name, f"{query!r}: {retrieval.error}")
+                )
             threads.extend(results)
 
     # De-duplicate by URL, keeping best rank.
