@@ -32,7 +32,11 @@ class Depth:
     fetch_pages: int  # how many competitor homepages to open
 
 
-SHALLOW = Depth("shallow", web_queries=1, social_queries=1, results_per_query=10, fetch_pages=0)
+# Even the fast sweep now opens a few homepages: without page text it cannot
+# see pricing or recency, so it could never spot a polished incumbent and
+# waved crowded markets through as "possible gaps". Page fetches are free HTTP
+# (not paid search calls), just a little slower.
+SHALLOW = Depth("shallow", web_queries=2, social_queries=1, results_per_query=10, fetch_pages=4)
 DEEP = Depth("deep", web_queries=4, social_queries=3, results_per_query=10, fetch_pages=6)
 
 DEPTHS = {"shallow": SHALLOW, "deep": DEEP}

@@ -41,9 +41,9 @@ INVESTIGATE_MIN = 12
 #: the rest accumulate: three abandoned projects are not three competitors.
 SUPPLY_WEIGHT = {
     "polished": 3.0,
-    "weak": 0.8,
-    "mismatched": 0.5,
-    "abandoned": 0.4,
+    "weak": 1.2,
+    "mismatched": 1.0,
+    "abandoned": 0.5,
 }
 
 #: Fixed reference points included in every judgement, so scores are relative
@@ -103,14 +103,18 @@ def score_supply_weakness(run: Run) -> tuple[int, str]:
     load = sum(SUPPLY_WEIGHT.get(c.klass, 1.0) for c in run.competitors)
     breakdown = ", ".join(f"{c.klass}" for c in run.competitors[:6])
 
+    # One live, dedicated competitor (weak or mismatched) caps supply_weak at 2,
+    # which is below the pursue threshold -- an existing product means the gap
+    # is not open, even if it looks imperfect. Only abandoned/trivial supply
+    # leaves room to score higher.
     if load < 0.5:
         return 4, f"only trivial supply ({breakdown})"
-    if load < 1.2:
-        return 3, f"one weak/mismatched product ({breakdown})"
-    if load < 2.0:
-        return 2, f"a couple of imperfect products ({breakdown})"
-    if load < 3.5:
-        return 1, f"several imperfect products ({breakdown})"
+    if load < 0.9:
+        return 3, f"only an abandoned or trivial product ({breakdown})"
+    if load < 2.1:
+        return 2, f"a live competitor already exists ({breakdown})"
+    if load < 3.4:
+        return 1, f"a couple of live competitors ({breakdown})"
     return 0, f"crowded with dedicated products ({breakdown})"
 
 

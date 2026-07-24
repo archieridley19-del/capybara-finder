@@ -36,6 +36,10 @@ COMMUNITIES = {
     "youtube.com", "facebook.com", "twitter.com", "x.com", "linkedin.com",
     "tiktok.com", "pinterest.com", "discord.com", "news.ycombinator.com",
     "ycombinator.com", "trustatrader.com",
+    # Social / video platforms: a post or reel is never a competing product,
+    # and its caption is not pricing.
+    "instagram.com", "threads.net", "snapchat.com", "twitch.tv", "vimeo.com",
+    "whatsapp.com", "t.me", "telegram.org", "nextdoor.co.uk", "nextdoor.com",
     # UK trade and small-business forums -- these are reach venues, and must
     # never be mistaken for competing products.
     "landlordzone.co.uk", "propertytribes.com", "propertyhub.net",
@@ -50,7 +54,8 @@ GENERIC_VENUES = {
     "news.ycombinator.com", "ycombinator.com", "quora.com", "youtube.com",
     "twitter.com", "x.com", "linkedin.com", "tiktok.com", "pinterest.com",
     "stackoverflow.com", "stackexchange.com", "discord.com", "facebook.com",
-    "medium.com", "mumsnet.com",
+    "medium.com", "mumsnet.com", "instagram.com", "threads.net", "twitch.tv",
+    "vimeo.com",
 }
 
 REFERENCE = {"wikipedia.org", "wiktionary.org", "britannica.com"}
@@ -216,18 +221,32 @@ def classify_result(result: SearchResult) -> tuple[str, list[str]]:
     return "product", ["standalone product page"]
 
 
+def _token_matches(token: str, haystack: str) -> bool:
+    """Stem match, so "invoices" finds "invoice/invoicing" and "chasing" finds
+    "chaser/chase". Exact-substring matching was marking a tool literally named
+    "Invoice Chaser" as generic just because a snippet said "invoice" not
+    "invoices" -- which under-counted real competitors and produced false gaps.
+    """
+    stem = token[:4] if len(token) > 4 else token
+    return stem in haystack
+
+
 def is_dedicated(result: SearchResult, ctx: NicheContext) -> tuple[bool, list[str]]:
-    """Does this product target *this exact task*, or is it a generic suite?"""
-    haystack = f"{result.title} {result.snippet}".lower()
+    """Does this product target *this exact task*, or is it a generic suite?
+
+    The domain name is part of the evidence: `invoicechaser.app` is on-task even
+    when its one-line snippet is not."""
+    domain_words = re.sub(r"[^a-z0-9]+", " ", result.domain.lower())
+    haystack = f"{result.title} {result.snippet} {domain_words}".lower()
     if not ctx.core_tokens:
         return True, ["no distinguishing tokens in candidate phrase"]
 
-    hits = {t for t in ctx.core_tokens if t in haystack}
+    hits = {t for t in ctx.core_tokens if _token_matches(t, haystack)}
     coverage = len(hits) / len(ctx.core_tokens)
     required = 0.6 if len(ctx.core_tokens) > 2 else 1.0
 
     if coverage >= required:
-        return True, [f"page text covers {len(hits)}/{len(ctx.core_tokens)} task terms"]
+        return True, [f"page/domain covers {len(hits)}/{len(ctx.core_tokens)} task terms"]
     return False, [
         f"only {len(hits)}/{len(ctx.core_tokens)} task terms present "
         f"({', '.join(sorted(hits)) or 'none'}) -- reads as a generic product"
