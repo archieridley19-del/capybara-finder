@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capybara Finder — Gemini edition</title>
+<style>
+  :root{
+    --paper:#eef1ec;--card:#fff;--ink:#22301f;--muted:#5c6b57;--faint:#8b9883;--line:#d5dcd1;
+    --accent:#2f5e8a;--accent-soft:#e2ecf3;--accent-ink:#1d3f5e;--pelt:#8a6440;
+    --good:#2f5e8a;--good-soft:#e2ecf3;--maybe:#b07a2e;--maybe-soft:#f5ecda;
+    --taken:#7c837a;--taken-soft:#eef1ee;--unknown:#a4502e;--unknown-soft:#f7e9e1;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;--serif:"Fraunces",Georgia,serif;
+    --mono:ui-monospace,Consolas,menlo,monospace;
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --paper:#121619;--card:#1a2126;--ink:#e7ecef;--muted:#97a4ad;--faint:#68757d;--line:#28323a;
+    --accent:#6fb0e0;--accent-soft:#14283a;--accent-ink:#a9d2ee;--pelt:#c79a6e;
+    --good:#6fb0e0;--good-soft:#14283a;--maybe:#d6a24e;--maybe-soft:#332813;
+    --taken:#8b988f;--taken-soft:#232922;--unknown:#d98a63;--unknown-soft:#33180f;
+  }}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.55;}
+  .wrap{max-width:820px;margin:0 auto;padding:26px 16px 90px;}
+  a{color:var(--accent);}
+  .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--pelt);font-weight:600;}
+  h1{font-family:var(--serif);font-size:32px;margin:5px 0 6px;}
+  header p{margin:0;color:var(--muted);max-width:60ch;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:20px;}
+  label.f{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:5px;}
+  input,textarea,select{width:100%;font:inherit;font-size:15px;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);}
+  input:focus,textarea:focus{outline:none;border-color:var(--accent);}
+  textarea{min-height:120px;resize:vertical;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .go{font:inherit;font-size:16px;font-weight:600;border:0;border-radius:10px;padding:12px 22px;background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;}
+  @media(prefers-color-scheme:dark){.go{color:#071722;}}
+  .go:disabled{opacity:.5;cursor:not-allowed;}
+  .ghost{background:transparent;color:var(--accent);border:1px solid var(--line);}
+  .hint{color:var(--muted);font-size:13px;margin-top:10px;}
+  .keyrow{display:flex;gap:8px;align-items:center;}
+  .keyrow input{flex:1;}
+  .status{font-size:13px;margin-top:10px;color:var(--faint);}
+  details.how{margin-top:16px;border:1px solid var(--line);border-radius:12px;background:var(--card);}
+  details.how>summary{cursor:pointer;padding:13px 16px;font-weight:600;font-size:14px;}
+  .howbody{padding:0 16px 16px;color:var(--muted);font-size:14px;}
+  .howbody b{color:var(--ink);}
+  .prog{margin-top:14px;font-size:14px;color:var(--accent-ink);background:var(--accent-soft);padding:11px 14px;border-radius:9px;display:none;}
+  .prog.on{display:block;}
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin:22px 0 14px;}
+  .filt{font:inherit;font-size:13px;padding:6px 13px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--muted);cursor:pointer;}
+  .filt.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin-bottom:11px;border-left:4px solid var(--edge,var(--line));}
+  .item.good{--edge:var(--good);}.item.maybe{--edge:var(--maybe);}.item.taken{--edge:var(--taken);}.item.unknown{--edge:var(--unknown);}
+  .toprow{display:flex;gap:12px;align-items:flex-start;}
+  .name{font-weight:600;font-size:16px;flex:1;}
+  .pill{font-size:12px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap;}
+  .pill.good{background:var(--good-soft);color:var(--good);}.pill.maybe{background:var(--maybe-soft);color:var(--maybe);}
+  .pill.taken{background:var(--taken-soft);color:var(--taken);}.pill.unknown{background:var(--unknown-soft);color:var(--unknown);}
+  .num{font-family:var(--serif);font-size:22px;font-weight:700;}
+  .blurb{margin:8px 0 0;color:var(--muted);font-size:14.5px;}
+  .kill{margin-top:8px;font-size:13.5px;border-left:3px solid var(--unknown);padding-left:10px;color:var(--ink);}
+  .scores{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-top:12px;}
+  .score{font-size:12.5px;}
+  .score .lab{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:3px;}
+  .meter{height:6px;background:var(--line);border-radius:4px;overflow:hidden;}
+  .meter>i{display:block;height:100%;background:var(--accent);}
+  .comp{font-size:13px;padding:3px 0;}
+  .cq{font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;}
+  .src{font-size:12.5px;word-break:break-all;}
+  .notes{margin-top:12px;}
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .mini{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:16px;border:1px solid var(--line);background:var(--paper);color:var(--muted);cursor:pointer;text-decoration:none;}
+  .empty{text-align:center;color:var(--muted);padding:36px;}
+  .warn{background:var(--unknown-soft);color:var(--unknown);border-radius:9px;padding:9px 12px;font-size:13px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Gemini edition · Google Search grounded</div>
+    <h1>Capybara Finder</h1>
+    <p>Paste your own niche ideas. Gemini searches Google for each (grounding), then scores demand vs. supply.
+      A result only gets a score if Gemini's response carries <b>real grounding sources</b> — otherwise it's marked
+      "couldn't verify", never guessed.</p>
+  </header>
+
+  <div class="card">
+    <label class="f" for="key">Your Google AI (Gemini) API key — stored only in this browser</label>
+    <div class="keyrow">
+      <input id="key" type="password" placeholder="AIza...">
+      <button class="go ghost" id="savekey" type="button">Save</button>
+    </div>
+    <div class="status" id="keystatus"></div>
+    <div class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Gemini's browser API is CORS-friendly, so this hosts on any static site (e.g. Antigravity).</div>
+    <div class="warn">Anyone who can open this page can read the key in it. Fine for you or a trusted friend; for a public site, put the key behind a small function instead.</div>
+  </div>
+
+  <div class="card">
+    <label class="f" for="list">Your niche ideas — one per line (or commas)</label>
+    <textarea id="list" placeholder="convert bank statement pdf to excel
+eicr expiry reminder app
+allergen matrix generator for cafes"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="go" id="run" type="button">Research my list</button>
+      <button class="go ghost" id="one" type="button">Research one (top line, deeper)</button>
+    </div>
+    <div class="hint">Each idea is one grounded Gemini call. Start with 3–5 lines.</div>
+    <div class="prog" id="prog"></div>
+  </div>
+
+  <details class="how">
+    <summary>How it scores &amp; what the colours mean</summary>
+    <div class="howbody">
+      <p>Five scores, <b>multiplied</b> — a zero in any one makes the whole thing zero, because a niche nobody pays for
+      or that you can't reach isn't a business.</p>
+      <p><b>Demand</b> 0–4 · how many people search/ask for it. <b>Gap in competition</b> 0–4 · how poorly served
+      (4 = nobody good, 0 = a polished tool owns it). <b>Signs people pay</b> 0–3. <b>Easy to reach them</b> 0–3 ·
+      an obvious subreddit/forum. <b>Nothing blocking</b> 0/1 · a licence/rule can make it 0.</p>
+      <p><b style="color:var(--good)">Possible gap</b> rare, worth testing · <b style="color:var(--maybe)">Worth a look</b> ·
+      <b style="color:var(--taken)">Already taken</b> (most results) · <b style="color:var(--unknown)">Couldn't verify</b>
+      (no grounding sources came back — don't trust it).</p>
+    </div>
+  </details>
+
+  <div class="filters" id="filters">
+    <button class="filt on" data-f="all">All</button>
+    <button class="filt" data-f="good">Possible gaps</button>
+    <button class="filt" data-f="maybe">Worth a look</button>
+    <button class="filt" data-f="taken">Already taken</button>
+    <button class="filt" data-f="unknown">Couldn't verify</button>
+  </div>
+  <div id="items"></div>
+  <div class="empty" id="empty">Nothing yet. Add your key and a list, then hit research.</div>
+</div>
+
+<script>
+/* ---------- config ---------- */
+const MODEL = "gemini-2.5-flash"; // swap to "gemini-2.5-pro" for deeper (pricier) analysis
+const API = m => `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(m)}`;
+const $ = id => document.getElementById(id);
+const LS_KEY="capy-gemini-key", LS_DATA="capy-gemini-data";
+let DATA = load(), FILT="all", busy=false;
+
+function load(){ try{return JSON.parse(localStorage.getItem(LS_DATA))||[]}catch(e){return[]} }
+function save(){ localStorage.setItem(LS_DATA, JSON.stringify(DATA)); }
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+$("key").value = localStorage.getItem(LS_KEY) || "";
+if($("key").value) $("keystatus").textContent="Key saved in this browser.";
+$("savekey").onclick=()=>{localStorage.setItem(LS_KEY,$("key").value.trim());$("keystatus").textContent="Saved.";};
+
+function prompt(niche){return `You are a skeptical analyst deciding whether the software niche "${niche}" is a real gap: high genuine demand AND weak or mismatched existing supply. Assume a UK user unless the niche says otherwise.
+
+Use Google Search to check the phrase itself, "<phrase> reddit", app stores, "best <phrase> tool", and "cheaper alternative to <phrase>". Base every judgement on what you actually find.
+
+FIRST, before scoring, write the single strongest reason this is NOT a viable gap (kill_reason). Then score.
+
+Supply rules: an SEO listicle ("10 best tools for X") is NOT a competitor. A tool counts as strong supply only if it is polished, affordable for this user, aimed at this exact task and country, and actively maintained. US-only tools for a UK need, enterprise tools for a sole trader, generic all-in-one suites, and abandoned projects are all WEAK supply. If a genuinely dominant, well-fitted product exists, name it in competitors and set gap_in_competition low.
+
+CALIBRATION: "convert bank statement pdf to excel" = SATURATED (DocuClipper etc.) -> low score. "resize image for instagram" = SATURATED (Canva) -> low score. Commodity categories (booking, invoicing, CRM, to-do) are saturated regardless of wording.
+
+Reply with ONLY a JSON object, no markdown fences:
+{
+ "kill_reason":"<strongest reason against>",
+ "competitors":[{"name":"<tool>","quality":"polished|weak|mismatched|abandoned|none","note":"<price/fit/country>"}],
+ "demand":<0-4>,"demand_reason":"<evidence>",
+ "gap_in_competition":<0-4>,"gap_reason":"<evidence>",
+ "pay":<0-3>,"pay_reason":"<evidence>",
+ "reach":<0-3>,"reach_reason":"<named subreddit/forum or none>",
+ "buildable":<0-1>,"buildable_reason":"<0 if a licence/regulation blocks it>",
+ "summary":"<2-3 sentence honest verdict>"
+}`;}
+
+/* ---------- Gemini call with google_search grounding ---------- */
+async function research(niche){
+  const key = localStorage.getItem(LS_KEY);
+  if(!key) throw new Error("Add your API key first.");
+  const res = await fetch(API(key),{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({
+      contents:[{role:"user",parts:[{text:prompt(niche)}]}],
+      tools:[{google_search:{}}]
+    })});
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message||"API error");
+  const cand = (data.candidates||[])[0]||{};
+  const text = (cand.content?.parts||[]).map(p=>p.text||"").join("\n");
+  // proof of retrieval straight from grounding metadata, not the model's word
+  const gm = cand.groundingMetadata||{};
+  const queries = gm.webSearchQueries||[];
+  const chunks = gm.groundingChunks||[];
+  const sources = chunks.map(c=>c.web?.uri).filter(Boolean);
+  const m = text.match(/\{[\s\S]*\}/);
+  const parsed = m ? JSON.parse(m[0]) : {};
+  return grade(niche, parsed, queries.length||(sources.length?1:0), [...new Set(sources)].slice(0,8));
+}
+
+const SATUR=[["booking appointment","invoic","\\bcrm\\b","to do list","to-do list","note taking","time tracking","expense track"]];
+function saturated(n){const t=n.toLowerCase();return SATUR[0].some(x=>new RegExp(x).test(t));}
+function grade(niche,j,searches,sources){
+  const clamp=(v,hi)=>Math.max(0,Math.min(hi,Number(v)||0));
+  let demand=clamp(j.demand,4),gap=clamp(j.gap_in_competition,4),pay=clamp(j.pay,3),reach=clamp(j.reach,3),build=clamp(j.buildable,1);
+  const polished=(j.competitors||[]).some(c=>(c.quality||"").toLowerCase()==="polished");
+  if(polished||saturated(niche)) gap=0;
+  const reliable = searches>0 && sources.length>0;
+  const composite = reliable ? demand*gap*pay*reach*build : null;
+  let band="unknown";
+  if(reliable){
+    if(polished||saturated(niche)||composite===0) band="taken";
+    else if(composite>=48 && demand>=3 && gap>=3 && pay>=1) band="good";
+    else if(composite>=12) band="maybe";
+    else band="taken";
+  }
+  return {niche,scores:{demand,gap,pay,reach,build},composite,band,reliable,searches,
+    kill:j.kill_reason||"",competitors:j.competitors||[],sources,summary:j.summary||"",notes:""};
+}
+function verdict(r){
+  if(!r.reliable) return {k:"unknown",label:"Couldn't verify",blurb:"No grounding sources came back, so this wasn't checked — treat it as guesswork."};
+  if(r.band==="good") return {k:"good",label:"Possible gap",blurb:"Real demand, weak supply. Worth testing with real people before building."};
+  if(r.band==="maybe") return {k:"maybe",label:"Worth a look",blurb:"Something's there but not a clear win."};
+  return {k:"taken",label:"Already taken",blurb:r.kill||"A capable competitor already covers this."};
+}
+
+const LAB=[["demand","Demand",4],["gap","Gap in competition",4],["pay","Signs people pay",3],["reach","Easy to reach them",3],["build","Nothing blocking",1]];
+const CQ={polished:["var(--unknown-soft)","var(--unknown)"],none:["var(--good-soft)","var(--good)"]};
+function render(){
+  const box=$("items");box.innerHTML="";
+  const rows=DATA.filter(r=>FILT==="all"||verdict(r).k===FILT);
+  $("empty").style.display=DATA.length?"none":"block";
+  rows.forEach((r,i)=>{
+    const v=verdict(r), el=document.createElement("div"); el.className="item "+v.k;
+    let comps=(r.competitors||[]).map(c=>{const q=(c.quality||"?").toLowerCase();const col=CQ[q]||["var(--maybe-soft)","var(--maybe)"];
+      return `<div class="comp"><span class="cq" style="background:${col[0]};color:${col[1]}">${esc(c.quality||"?")}</span><b>${esc(c.name||"")}</b> <span style="color:var(--muted)">${esc(c.note||"")}</span></div>`;}).join("");
+    let scores=r.reliable?('<div class="scores">'+LAB.map(([k,l,mx])=>{const val=r.scores[k],pct=Math.round(100*val/mx);
+      return `<div class="score"><div class="lab"><span>${l}</span><span>${val}/${mx}</span></div><div class="meter"><i style="width:${pct}%"></i></div></div>`;}).join("")+'</div>'):'';
+    let srcs=(r.sources||[]).map(u=>`<div class="src"><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a></div>`).join("");
+    el.innerHTML=`<div class="toprow"><div class="name">${esc(r.niche)}</div>
+      <div style="text-align:right"><div class="num" style="color:${r.reliable?(v.k==="good"?"var(--good)":"var(--ink)"):"var(--unknown)"}">${r.reliable?r.composite:"—"}</div>
+      <span class="pill ${v.k}">${v.label}</span></div></div>
+      <p class="blurb">${esc(v.blurb)}</p>
+      ${r.summary?`<div class="kill">${esc(r.summary)}</div>`:""}
+      ${scores}
+      ${comps?`<div style="margin-top:12px">${comps}</div>`:""}
+      <div style="margin-top:6px;font-size:12px;color:var(--faint)">${r.reliable?`✓ ${r.searches} searches, ${r.sources.length} sources`:`⚠ ${r.searches} searches, ${r.sources.length} sources — not enough to trust`}</div>
+      ${srcs?`<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--accent)">sources</summary>${srcs}</details>`:""}
+      <textarea class="notes" placeholder="your notes…">${esc(r.notes||"")}</textarea>
+      <div class="actions">
+        <a class="mini" href="https://www.google.com/search?q=${encodeURIComponent(r.niche)}" target="_blank" rel="noopener">Google ↗</a>
+        <a class="mini" href="https://www.google.com/search?q=${encodeURIComponent(r.niche+' reddit')}" target="_blank" rel="noopener">Reddit ↗</a>
+        <button class="mini" data-del="${i}" type="button">remove</button>
+      </div>`;
+    const ta=el.querySelector(".notes"); ta.onblur=()=>{r.notes=ta.value;save();};
+    el.querySelector("[data-del]").onclick=()=>{DATA=DATA.filter(x=>x!==r);save();render();};
+    box.appendChild(el);
+  });
+}
+
+function parseList(){return $("list").value.replace(/,/g,"\n").split("\n").map(s=>s.trim()).filter(Boolean);}
+async function runList(phrases){
+  if(busy)return; busy=true; $("run").disabled=$("one").disabled=true;
+  const prog=$("prog");prog.classList.add("on"); let fails=0;
+  for(let i=0;i<phrases.length;i++){
+    prog.textContent=`Researching ${i+1} of ${phrases.length}: "${phrases[i]}"…`;
+    try{
+      const r=await research(phrases[i]);
+      DATA=[r,...DATA.filter(x=>x.niche!==r.niche)]; save(); render(); fails=0;
+    }catch(e){
+      prog.textContent="Error: "+e.message; fails++;
+      if(fails>=3){prog.textContent="Stopped after 3 failures: "+e.message;break;}
+    }
+    await new Promise(r=>setTimeout(r,1200));
+  }
+  prog.textContent="Done."; setTimeout(()=>prog.classList.remove("on"),2500);
+  busy=false;$("run").disabled=$("one").disabled=false;
+}
+$("run").onclick=()=>{const p=parseList();if(!p.length){$("list").focus();return;}runList(p);};
+$("one").onclick=()=>{const p=parseList();if(!p.length){$("list").focus();return;}runList([p[0]]);};
+document.querySelectorAll(".filt").forEach(b=>b.onclick=()=>{document.querySelectorAll(".filt").forEach(x=>x.classList.remove("on"));b.classList.add("on");FILT=b.dataset.f;render();});
+render();
+</script>
+</body>
+</html>
