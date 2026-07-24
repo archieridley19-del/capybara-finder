@@ -286,10 +286,12 @@ class Run:
         return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 
-#: Keys `to_dict` adds for convenience that are not constructor fields.
+#: Keys added downstream for convenience that are not Run constructor fields --
+#: `to_dict` derivations plus the lead marks the store folds into list rows.
 _DERIVED = {
     "composite", "composite_display", "ratio", "verified",
     "n_retrievals", "n_productive", "dedicated_supply",
+    "lead_status", "lead_notes",
 }
 
 

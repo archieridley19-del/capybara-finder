@@ -32,26 +32,36 @@ class Depth:
     fetch_pages: int  # how many competitor homepages to open
 
 
-SHALLOW = Depth("shallow", web_queries=1, social_queries=1, results_per_query=10, fetch_pages=0)
+# Even the fast sweep now opens a few homepages: without page text it cannot
+# see pricing or recency, so it could never spot a polished incumbent and
+# waved crowded markets through as "possible gaps". Page fetches are free HTTP
+# (not paid search calls), just a little slower.
+SHALLOW = Depth("shallow", web_queries=2, social_queries=1, results_per_query=10, fetch_pages=4)
 DEEP = Depth("deep", web_queries=4, social_queries=3, results_per_query=10, fetch_pages=6)
 
 DEPTHS = {"shallow": SHALLOW, "deep": DEEP}
 
 
 def web_query_plan(candidate: str) -> list[str]:
+    # First query is the bare phrase (what a user actually types); the rest
+    # surface competitors and their pricing so supply can be judged.
     return [
         candidate,
-        f"{candidate} software",
+        f"{candidate} app",
         f"{candidate} pricing",
-        f"best {candidate} tool",
+        f"best {candidate} software",
     ]
 
 
 def social_query_plan(candidate: str) -> list[str]:
+    # Probes ordered by value: the bare ask, explicit tool-seeking, then the
+    # strongest buy signal there is -- people complaining an existing tool
+    # costs too much or asking for a cheaper alternative.
     return [
         candidate,
-        f"is there a tool for {candidate}",
-        f"{candidate} alternative expensive",
+        f"is there an app for {candidate}",
+        f"cheaper alternative to {candidate}",
+        f"why is there no app for {candidate}",
     ]
 
 

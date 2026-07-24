@@ -41,9 +41,9 @@ INVESTIGATE_MIN = 12
 #: the rest accumulate: three abandoned projects are not three competitors.
 SUPPLY_WEIGHT = {
     "polished": 3.0,
-    "weak": 0.8,
-    "mismatched": 0.5,
-    "abandoned": 0.4,
+    "weak": 1.2,
+    "mismatched": 1.0,
+    "abandoned": 0.5,
 }
 
 #: Fixed reference points included in every judgement, so scores are relative
@@ -72,6 +72,61 @@ ANCHOR_PROMPT = "\n".join(
 )
 
 
+#: Commodity horizontal categories that are saturated no matter the wording.
+#: The giants (Calendly, Xero...) rarely rank for the exact long-tail phrase, so
+#: a phrase-by-phrase supply check misses them and wrongly reads the field as
+#: open. This is calibration, same idea as ANCHORS: known-saturated => reject.
+SATURATED_CATEGORIES: dict[str, tuple[tuple[str, ...], str]] = {
+    "booking / scheduling": (
+        ("booking appointment", "appointment booking", "appointment scheduling",
+         "online booking", "booking system", "scheduling app", "appointment app",
+         "appointment reminder", "book appointment", "class booking"),
+        "Calendly, Acuity, Cal.com, SimplyBook",
+    ),
+    "invoicing": (
+        ("invoice", "invoicing"),
+        "Xero, QuickBooks, FreshBooks, Wave",
+    ),
+    "CRM": (
+        ("crm", "customer relationship"),
+        "HubSpot, Pipedrive, Zoho",
+    ),
+    "to-do / task list": (
+        ("to do list", "to-do list", "todo app", "task manager", "task list app"),
+        "Todoist, TickTick, Microsoft To Do",
+    ),
+    "note taking": (
+        ("note taking", "notes app", "note app"),
+        "Notion, Evernote, OneNote",
+    ),
+    "time tracking": (
+        ("time tracking", "timesheet app", "time tracker"),
+        "Toggl, Clockify, Harvest",
+    ),
+    "expense tracking": (
+        ("expense tracker", "expense tracking", "expense report", "receipt scanner"),
+        "Expensify, QuickBooks, Dext",
+    ),
+    "email marketing": (
+        ("email marketing", "newsletter app", "email campaign"),
+        "Mailchimp, Brevo, ConvertKit",
+    ),
+    "generic scheduling / rota": (
+        ("rota app", "staff scheduling", "shift planner", "shift scheduling"),
+        "Deputy, When I Work, Rotaready",
+    ),
+}
+
+
+def saturated_category(candidate: str) -> tuple[str, str] | None:
+    """If the phrase is a commodity horizontal category, return (name, examples)."""
+    text = candidate.lower()
+    for name, (triggers, incumbents) in SATURATED_CATEGORIES.items():
+        if any(trigger in text for trigger in triggers):
+            return name, incumbents
+    return None
+
+
 def _cap(value: float, maximum: int) -> int:
     return max(0, min(maximum, int(value)))
 
@@ -93,6 +148,11 @@ def score_supply_weakness(run: Run) -> tuple[int, str]:
     polished, affordable, actively-maintained, correctly-targeted product
     counts as strong supply -- and one of those is enough to close the niche.
     """
+    saturated = saturated_category(run.candidate)
+    if saturated:
+        name, incumbents = saturated
+        return 0, f"commodity '{name}' category, dominated by {incumbents}"
+
     if run.polished_competitors:
         names = ", ".join(c.name[:40] for c in run.polished_competitors[:3])
         return 0, f"polished on-target competitor(s) present: {names}"
@@ -103,14 +163,18 @@ def score_supply_weakness(run: Run) -> tuple[int, str]:
     load = sum(SUPPLY_WEIGHT.get(c.klass, 1.0) for c in run.competitors)
     breakdown = ", ".join(f"{c.klass}" for c in run.competitors[:6])
 
+    # One live, dedicated competitor (weak or mismatched) caps supply_weak at 2,
+    # which is below the pursue threshold -- an existing product means the gap
+    # is not open, even if it looks imperfect. Only abandoned/trivial supply
+    # leaves room to score higher.
     if load < 0.5:
         return 4, f"only trivial supply ({breakdown})"
-    if load < 1.2:
-        return 3, f"one weak/mismatched product ({breakdown})"
-    if load < 2.0:
-        return 2, f"a couple of imperfect products ({breakdown})"
-    if load < 3.5:
-        return 1, f"several imperfect products ({breakdown})"
+    if load < 0.9:
+        return 3, f"only an abandoned or trivial product ({breakdown})"
+    if load < 2.1:
+        return 2, f"a live competitor already exists ({breakdown})"
+    if load < 3.4:
+        return 1, f"a couple of live competitors ({breakdown})"
     return 0, f"crowded with dedicated products ({breakdown})"
 
 

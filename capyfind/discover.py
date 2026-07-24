@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable
 
-from .generate import generate_candidates
+from .generate import build_candidates
 from .http import CircuitBreaker, CircuitOpen
 from .models import Run
 from .providers import ProviderSet
@@ -60,8 +60,8 @@ def discover(
     on_progress: Callable[[int, int, Run | None, str], None] | None = None,
     candidates: Iterable[str] | None = None,
 ) -> BatchResult:
-    phrases = list(candidates) if candidates is not None else generate_candidates(
-        seed, limit=limit, country=country, tasks_file=tasks_file
+    phrases = list(candidates) if candidates is not None else build_candidates(
+        seed, providers=providers, limit=limit, country=country, tasks_file=tasks_file
     )
     batch = BatchResult(seed=seed)
     breaker = CircuitBreaker(threshold=failure_threshold)
