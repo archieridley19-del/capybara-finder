@@ -135,7 +135,7 @@ class HttpApiTests(unittest.TestCase):
     def test_index_serves_the_page(self):
         status, body = self._get("/")
         self.assertEqual(status, 200)
-        self.assertIn("capyfind", body)
+        self.assertIn("Capybara Finder", body)
 
     def test_runs_endpoint_returns_stored_run(self):
         status, body = self._get("/api/runs")

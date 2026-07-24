@@ -309,366 +309,422 @@ PAGE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>capyfind</title>
+<title>Capybara Finder</title>
 <style>
-  :root {
-    --paper:#f4f7f6; --card:#fff; --ink:#16211f; --muted:#5f6d6a; --faint:#8a9793;
-    --line:#dbe3e0; --accent:#0f6b5c; --accent-dim:#e0efeb;
-    --pursue:#1b7a4b; --investigate:#8a6000; --reject:#64716e; --unverified:#5b4b8a;
-    --mono:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+  :root{
+    --paper:#f5f7f6; --card:#ffffff; --ink:#17241f; --muted:#5c6b66; --faint:#8b9893;
+    --line:#e2e8e5; --accent:#0f6b5c; --accent-soft:#e4f0ec; --accent-ink:#0b4c41;
+    --good:#1a7a4b; --good-soft:#e2f3e9;
+    --maybe:#9a6a00; --maybe-soft:#fbefd6;
+    --taken:#8a8f8c; --taken-soft:#eef1f0;
+    --unknown:#6a5bb0; --unknown-soft:#ece8f8;
     --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,menlo,monospace;
   }
   @media (prefers-color-scheme:dark){:root{
-    --paper:#101816; --card:#17211f; --ink:#e6ece9; --muted:#9aa8a4; --faint:#6d7b77;
-    --line:#26332f; --accent:#5ec6b0; --accent-dim:#14302b;
-    --pursue:#5cc98a; --investigate:#d8a63c; --reject:#8b9894; --unverified:#a493d8;
+    --paper:#0f1613; --card:#18211d; --ink:#e7ece9; --muted:#9aa8a3; --faint:#67756f;
+    --line:#26322d; --accent:#5fc7b0; --accent-soft:#15332c; --accent-ink:#a6e5d8;
+    --good:#5fc98a; --good-soft:#14301f;
+    --maybe:#e0b552; --maybe-soft:#33260a;
+    --taken:#8b9893; --taken-soft:#222926;
+    --unknown:#b3a5e6; --unknown-soft:#241d3d;
   }}
   :root[data-theme="dark"]{
-    --paper:#101816; --card:#17211f; --ink:#e6ece9; --muted:#9aa8a4; --faint:#6d7b77;
-    --line:#26332f; --accent:#5ec6b0; --accent-dim:#14302b;
-    --pursue:#5cc98a; --investigate:#d8a63c; --reject:#8b9894; --unverified:#a493d8;
+    --paper:#0f1613; --card:#18211d; --ink:#e7ece9; --muted:#9aa8a3; --faint:#67756f;
+    --line:#26322d; --accent:#5fc7b0; --accent-soft:#15332c; --accent-ink:#a6e5d8;
+    --good:#5fc98a; --good-soft:#14301f; --maybe:#e0b552; --maybe-soft:#33260a;
+    --taken:#8b9893; --taken-soft:#222926; --unknown:#b3a5e6; --unknown-soft:#241d3d;
   }
   :root[data-theme="light"]{
-    --paper:#f4f7f6; --card:#fff; --ink:#16211f; --muted:#5f6d6a; --faint:#8a9793;
-    --line:#dbe3e0; --accent:#0f6b5c; --accent-dim:#e0efeb;
-    --pursue:#1b7a4b; --investigate:#8a6000; --reject:#64716e; --unverified:#5b4b8a;
+    --paper:#f5f7f6; --card:#ffffff; --ink:#17241f; --muted:#5c6b66; --faint:#8b9893;
+    --line:#e2e8e5; --accent:#0f6b5c; --accent-soft:#e4f0ec; --accent-ink:#0b4c41;
+    --good:#1a7a4b; --good-soft:#e2f3e9; --maybe:#9a6a00; --maybe-soft:#fbefd6;
+    --taken:#8a8f8c; --taken-soft:#eef1f0; --unknown:#6a5bb0; --unknown-soft:#ece8f8;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
-       font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
-  header.top{border-bottom:2px solid var(--ink);padding:16px clamp(14px,3vw,28px);
-             display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
-  header.top h1{margin:0;font-size:18px;letter-spacing:-.01em;}
-  header.top .tag{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
-                  text-transform:uppercase;color:var(--accent);}
-  .provider{margin-left:auto;font-family:var(--mono);font-size:11px;
-            color:var(--faint);}
-  .wrap{max-width:1180px;margin:0 auto;padding:clamp(16px,3vw,28px);
-        display:flex;flex-direction:column;gap:22px;}
+       font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 18px 96px;}
 
-  /* launch panel */
-  .launch{background:var(--card);border:1px solid var(--line);border-radius:6px;
-          padding:18px;display:flex;flex-direction:column;gap:14px;}
-  .launch .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
-  .field{display:flex;flex-direction:column;gap:5px;}
-  .field label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;
-               text-transform:uppercase;color:var(--faint);}
-  .field input,.field select{font:inherit;padding:8px 10px;border:1px solid var(--line);
-       border-radius:5px;background:var(--paper);color:var(--ink);min-width:0;}
-  .field input:focus,.field select:focus{outline:2px solid var(--accent);
-       outline-offset:-1px;border-color:var(--accent);}
-  #seed{min-width:260px;flex:1;}
-  .btn{font:inherit;font-weight:600;border:0;border-radius:5px;padding:9px 18px;
-       background:var(--accent);color:var(--card);cursor:pointer;transition:.15s;}
-  .btn:hover{filter:brightness(1.08);}
-  .btn:disabled{opacity:.5;cursor:not-allowed;}
-  .btn.ghost{background:transparent;color:var(--accent);
-             border:1px solid var(--line);}
-  .hint{color:var(--muted);font-size:12.5px;}
-  .hint code{font-family:var(--mono);font-size:12px;}
+  h1{font-size:22px;margin:0 0 2px;letter-spacing:-.01em;}
+  .status{font-size:13px;color:var(--faint);margin-bottom:22px;}
+  .status b{color:var(--good);font-weight:600;}
+  .status.warn b{color:var(--maybe);}
+
+  /* search card */
+  .search{background:var(--card);border:1px solid var(--line);border-radius:14px;
+          padding:20px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .search h2{font-size:17px;margin:0 0 4px;}
+  .search p.lead{margin:0 0 16px;color:var(--muted);font-size:14.5px;}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap;}
+  #seed{flex:1;min-width:220px;font:inherit;font-size:16px;padding:13px 15px;
+        border:1.5px solid var(--line);border-radius:10px;background:var(--paper);
+        color:var(--ink);}
+  #seed:focus{outline:none;border-color:var(--accent);}
+  .go{font:inherit;font-size:16px;font-weight:600;border:0;border-radius:10px;
+      padding:13px 22px;background:var(--accent);color:#fff;cursor:pointer;}
+  .go:hover{filter:brightness(1.07);}
+  .go:disabled{opacity:.55;cursor:not-allowed;}
+  :root[data-theme="dark"] .go, :root:not([data-theme]) .go{color:#06231d;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px;align-items:center;}
+  .chips .lbl{font-size:13px;color:var(--faint);}
+  .chip{font:inherit;font-size:13px;padding:5px 12px;border:1px solid var(--line);
+        border-radius:20px;background:var(--paper);color:var(--muted);cursor:pointer;}
+  .chip:hover{border-color:var(--accent);color:var(--accent);}
+
+  .moretoggle{margin-top:14px;font-size:13.5px;color:var(--accent);cursor:pointer;
+              background:none;border:0;padding:0;font-family:inherit;}
+  .more{display:none;margin-top:14px;gap:14px;flex-wrap:wrap;
+        padding-top:14px;border-top:1px solid var(--line);}
+  .more.on{display:flex;}
+  .more .f{display:flex;flex-direction:column;gap:5px;}
+  .more label{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;}
+  .more input,.more select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);
+       border-radius:8px;background:var(--paper);color:var(--ink);}
 
   /* progress */
-  .progress{display:none;flex-direction:column;gap:8px;}
-  .progress.on{display:flex;}
-  .bar{height:8px;border-radius:5px;background:var(--accent-dim);overflow:hidden;}
-  .bar > i{display:block;height:100%;background:var(--accent);width:0;
-           transition:width .3s;}
-  .pstat{font-family:var(--mono);font-size:12px;color:var(--muted);
-         display:flex;justify-content:space-between;gap:10px;}
-  .banner{padding:9px 12px;border-radius:5px;font-size:12.5px;}
-  .banner.warn{background:var(--accent-dim);color:var(--accent);}
-  .banner.err{background:#fde8e6;color:#8a2018;}
-  @media (prefers-color-scheme:dark){.banner.err{background:#3a1512;color:#f0b3aa;}}
+  .prog{display:none;margin-top:16px;padding:14px 16px;background:var(--accent-soft);
+        border-radius:10px;}
+  .prog.on{display:block;}
+  .prog .msg{font-size:14px;color:var(--accent-ink);margin-bottom:8px;}
+  .track{height:7px;border-radius:4px;background:rgba(0,0,0,.09);overflow:hidden;}
+  .track > i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s;}
+  .done-msg{display:none;margin-top:16px;padding:13px 16px;border-radius:10px;
+            font-size:14.5px;background:var(--accent-soft);color:var(--accent-ink);}
+  .done-msg.err{background:var(--maybe-soft);color:var(--maybe);}
+  .done-msg.on{display:block;}
 
-  /* controls */
-  .controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;
-            font-size:13px;}
-  .controls label{display:flex;gap:6px;align-items:center;color:var(--muted);}
-  .controls select{font:inherit;padding:5px 9px;border:1px solid var(--line);
-                   border-radius:5px;background:var(--card);color:var(--ink);}
-  .spacer{flex:1;}
-  .count{font-family:var(--mono);font-size:12px;color:var(--faint);}
+  /* results */
+  .resulthead{display:flex;align-items:center;gap:12px;margin:30px 0 12px;flex-wrap:wrap;}
+  .resulthead h2{font-size:16px;margin:0;}
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;}
+  .filt{font:inherit;font-size:13px;padding:6px 13px;border:1px solid var(--line);
+        border-radius:20px;background:var(--card);color:var(--muted);cursor:pointer;}
+  .filt.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .rightlink{margin-left:auto;display:flex;gap:12px;align-items:center;}
+  .rightlink a,.rightlink select{font-size:13px;color:var(--accent);text-decoration:none;
+       background:none;border:0;font-family:inherit;cursor:pointer;}
+  .rightlink select{border:1px solid var(--line);border-radius:7px;padding:5px 8px;color:var(--ink);}
 
-  /* table */
-  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;
-             background:var(--card);}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
-     text-transform:uppercase;color:var(--faint);font-weight:700;padding:11px 12px;
-     border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;
-     background:var(--card);}
-  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
-  tbody tr.row:hover td{background:var(--accent-dim);}
-  tbody tr.row{cursor:pointer;}
-  .cand{font-weight:560;}
-  .kill{color:var(--muted);font-size:12px;margin-top:2px;max-width:52ch;}
-  .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
-  .band{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.08em;
-        text-transform:uppercase;padding:3px 8px;border-radius:3px;white-space:nowrap;}
-  .band.pursue{background:var(--pursue);color:var(--card);}
-  .band.investigate{background:var(--investigate);color:var(--card);}
-  .band.reject{background:transparent;color:var(--reject);border:1px solid var(--line);}
-  .band.unverified{background:transparent;color:var(--unverified);
-                   border:1px solid var(--line);}
-  .lead-sel{font:inherit;font-size:12px;padding:4px 6px;border:1px solid var(--line);
-            border-radius:4px;background:var(--paper);color:var(--ink);}
-  .detail td{background:var(--paper);}
-  .detail pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;
-              margin:0 0 12px;overflow-x:auto;line-height:1.5;}
-  .detail a{color:var(--accent);}
-  .notes{width:100%;font:inherit;font-size:12.5px;padding:8px;border:1px solid var(--line);
-         border-radius:5px;background:var(--card);color:var(--ink);resize:vertical;
-         min-height:52px;}
-  .empty{padding:44px;text-align:center;color:var(--muted);}
-  .savednote{font-family:var(--mono);font-size:11px;color:var(--pursue);margin-left:8px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:16px 18px;margin-bottom:12px;border-left:4px solid var(--edge,var(--line));}
+  .card.good{--edge:var(--good);} .card.maybe{--edge:var(--maybe);}
+  .card.taken{--edge:var(--taken);} .card.unknown{--edge:var(--unknown);}
+  .card .toprow{display:flex;align-items:flex-start;gap:12px;}
+  .card .name{font-size:16.5px;font-weight:600;flex:1;line-height:1.3;}
+  .pill{font-size:12px;font-weight:700;padding:4px 11px;border-radius:20px;white-space:nowrap;}
+  .pill.good{background:var(--good-soft);color:var(--good);}
+  .pill.maybe{background:var(--maybe-soft);color:var(--maybe);}
+  .pill.taken{background:var(--taken-soft);color:var(--taken);}
+  .pill.unknown{background:var(--unknown-soft);color:var(--unknown);}
+  .card .blurb{margin:9px 0 0;color:var(--muted);font-size:14.5px;}
+  .card .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+  .leadbtns{display:flex;gap:4px;flex-wrap:wrap;}
+  .leadbtn{font:inherit;font-size:12.5px;padding:5px 11px;border:1px solid var(--line);
+           border-radius:16px;background:var(--paper);color:var(--muted);cursor:pointer;}
+  .leadbtn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+  .seemore{margin-left:auto;font:inherit;font-size:13px;color:var(--accent);
+           background:none;border:0;cursor:pointer;padding:0;}
+  .detail{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+  .detail.on{display:block;}
+  .scores{display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;margin-bottom:14px;}
+  .score{font-size:13px;}
+  .score .lab{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:3px;}
+  .score .meter{height:6px;background:var(--line);border-radius:4px;overflow:hidden;}
+  .score .meter > i{display:block;height:100%;background:var(--accent);}
+  .detail pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.5;
+       background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;
+       overflow-x:auto;max-height:340px;overflow-y:auto;margin:0 0 12px;}
+  .detail pre a{color:var(--accent);}
+  .notes{width:100%;font:inherit;font-size:14px;padding:10px;border:1px solid var(--line);
+         border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical;min-height:60px;}
+  .noterow{display:flex;align-items:center;gap:10px;margin-top:6px;}
+  .noterow .lab{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;}
+  .saved{font-size:12px;color:var(--good);display:none;}
+  .empty{text-align:center;color:var(--muted);padding:40px 16px;font-size:14.5px;}
+  .empty b{color:var(--ink);}
 </style>
 </head>
 <body>
-<header class="top">
-  <h1>capyfind</h1>
-  <span class="tag">micro-niche gap finder</span>
-  <span class="provider" id="provider">checking sources...</span>
-</header>
-
 <div class="wrap">
+  <h1>Capybara Finder</h1>
+  <div class="status" id="status">checking…</div>
 
-  <div class="launch">
-    <div class="row">
-      <div class="field" style="flex:1;">
-        <label for="seed" id="seedlabel">Seed — an industry or theme</label>
-        <input id="seed" placeholder="e.g. UK trades" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="mode">Mode</label>
+  <div class="search">
+    <h2>Find a gap</h2>
+    <p class="lead">Type an industry or kind of customer. It tests lots of specific
+      things people search for, then tells you which look <b>already taken</b>
+      (most will) and which might be a real <b>gap</b> (rare — that's the point).</p>
+    <div class="searchrow">
+      <input id="seed" placeholder="e.g. small landlords" autocomplete="off">
+      <button class="go" id="go">Find gaps</button>
+    </div>
+    <div class="chips">
+      <span class="lbl">Try:</span>
+      <button class="chip">UK trades</button>
+      <button class="chip">small landlords</button>
+      <button class="chip">Etsy sellers</button>
+      <button class="chip">accountants</button>
+      <button class="chip">personal trainers</button>
+    </div>
+    <button class="moretoggle" id="moretoggle">More options ▾</button>
+    <div class="more" id="more">
+      <div class="f">
+        <label>What to do</label>
         <select id="mode">
-          <option value="discover">Discover — wide sweep</option>
-          <option value="verify">Verify — one niche, deep</option>
+          <option value="discover">Explore an industry</option>
+          <option value="verify">Check one exact idea</option>
         </select>
       </div>
-      <div class="field" id="limitfield">
-        <label for="limit">How many</label>
+      <div class="f" id="howmanyf">
+        <label>Ideas to test</label>
         <input id="limit" type="number" value="20" min="1" max="200" style="width:90px;">
       </div>
-      <div class="field">
-        <label for="country">Country</label>
+      <div class="f">
+        <label>Country</label>
         <input id="country" value="UK" style="width:80px;">
       </div>
-      <button class="btn" id="go">Run</button>
-      <button class="btn ghost" id="preview">Preview ideas</button>
+      <div class="f" style="justify-content:flex-end;">
+        <button class="chip" id="preview" style="padding:8px 14px;">Preview ideas first (free)</button>
+      </div>
     </div>
-    <div class="hint" id="hint">
-      Discover generates and tests many candidate phrases. Verify does one deep
-      dive — type the exact phrase in the seed box and switch mode to Verify.
+    <div class="prog" id="prog">
+      <div class="msg" id="progmsg">Starting…</div>
+      <div class="track"><i id="trackfill"></i></div>
     </div>
-    <div class="progress" id="progress">
-      <div class="bar"><i id="barfill"></i></div>
-      <div class="pstat"><span id="pmsg">starting...</span><span id="pcount"></span></div>
-    </div>
-    <div id="runbanner"></div>
+    <div class="done-msg" id="donemsg"></div>
   </div>
 
-  <div class="controls">
-    <label><input type="checkbox" id="survivors"> survivors only</label>
-    <label>seed
-      <select id="seedfilter"><option value="">all</option></select>
-    </label>
-    <label>status
-      <select id="statusfilter">
-        <option value="">any</option>
-        <option value="new">new</option>
-        <option value="shortlist">shortlist</option>
-        <option value="chasing">chasing</option>
-        <option value="rejected">rejected</option>
-      </select>
-    </label>
-    <div class="spacer"></div>
-    <span class="count" id="count"></span>
-    <a class="btn ghost" id="csv" href="/export.csv">Export CSV</a>
+  <div class="resulthead">
+    <h2>Results</h2>
+    <div class="rightlink">
+      <select id="seedfilter"><option value="">all searches</option></select>
+      <a id="csv" href="/export.csv">Download CSV</a>
+    </div>
   </div>
-
-  <div class="tablewrap">
-    <table>
-      <thead><tr>
-        <th>candidate</th><th class="num">dem</th><th class="num">sup</th>
-        <th class="num">pay</th><th class="num">rch</th><th class="num">bld</th>
-        <th class="num">ratio</th><th class="num">score</th>
-        <th>verdict</th><th>lead</th>
-      </tr></thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <div class="empty" id="empty">Nothing yet. Run a sweep above to get started.</div>
+  <div class="filters" id="filters">
+    <button class="filt on" data-f="all">All</button>
+    <button class="filt" data-f="good">Possible gaps</button>
+    <button class="filt" data-f="maybe">Worth a look</button>
+    <button class="filt" data-f="taken">Already taken</button>
+    <button class="filt" data-f="unknown">Couldn't check</button>
   </div>
+  <div id="cards"></div>
+  <div class="empty" id="empty"><b>No results yet.</b><br>Type an industry above and hit “Find gaps”.</div>
 </div>
 
 <script>
-const $ = (id) => document.getElementById(id);
-let DATA = [], poll = null;
+const $=(id)=>document.getElementById(id);
+let DATA=[], FILT="all", poll=null;
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function linkify(s){return s.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');}
 
-async function loadProviders(){
+/* turn the engine's verdict into plain English */
+function verdict(run){
+  const kr=(run.kill_reason||"").toLowerCase();
+  if(run.band==="pursue")
+    return {k:"good",label:"Possible gap",blurb:"Looks like a real gap. Worth testing with real people before building."};
+  if(run.band==="investigate")
+    return {k:"maybe",label:"Worth a look",blurb:"Nobody's clearly winning here — it could be worth a closer look."};
+  if(run.band==="unverified"){
+    let b="Couldn't check this one.";
+    if(kr.includes("never assessed")||kr.includes("no web")) b="Couldn't check — the web search key isn't set for this run.";
+    else if(kr.includes("none productive")||kr.includes("no ")) b="Couldn't check — no results came back for this phrase.";
+    return {k:"unknown",label:"Couldn't check",blurb:b};
+  }
+  // reject
+  let b="The market already looks well served.";
+  if(kr.includes("polished incumbent")){
+    const who=(run.kill_reason.split(":")[1]||"").trim();
+    b="A strong competitor already does this"+(who?": "+who:".");
+  } else if(kr.includes("hard blocker")){
+    b="Blocked by a rule or licence you'd need to build it.";
+  } else if(kr.includes("pays")||kr.includes("pay ")){
+    b="No sign that anyone actually pays in this area.";
+  } else if(kr.includes("reach")){
+    b="No obvious place to find and reach these customers.";
+  } else if(kr.includes("supply already")||kr.includes("adequate")){
+    b="Several tools already cover this well enough.";
+  }
+  return {k:"taken",label:"Already taken",blurb:b};
+}
+
+async function loadStatus(){
   try{
-    const p = await (await fetch("/api/providers")).json();
-    const el = $("provider");
-    if(p.fixture){ el.textContent = "FIXTURE MODE — not live findings"; el.style.color="var(--investigate)"; }
-    else if(!p.any_live){ el.textContent = "no web key — runs will be UNVERIFIED"; el.style.color="var(--unverified)"; }
-    else { el.textContent = "web search live"; el.style.color="var(--pursue)"; }
-  }catch(e){ $("provider").textContent=""; }
+    const p=await (await fetch("/api/providers")).json();
+    const el=$("status");
+    if(p.fixture){el.innerHTML="Demo mode — showing sample data, not live results";el.classList.add("warn");}
+    else if(!p.any_live){el.innerHTML="No search key set — results will say “couldn't check”. ";el.classList.add("warn");}
+    else{el.innerHTML="Search is <b>live</b> — ready to go.";}
+  }catch(e){}
 }
-
 async function loadSeeds(){
-  const seeds = await (await fetch("/api/seeds")).json();
-  const sel = $("seedfilter"); const cur = sel.value;
-  sel.innerHTML = '<option value="">all</option>';
-  seeds.forEach(s=>{const o=document.createElement("option");o.value=o.textContent=s;sel.appendChild(o);});
-  sel.value = cur;
+  const s=await (await fetch("/api/seeds")).json();
+  const sel=$("seedfilter"),cur=sel.value;
+  sel.innerHTML='<option value="">all searches</option>';
+  s.forEach(x=>{const o=document.createElement("option");o.value=o.textContent=x;sel.appendChild(o);});
+  sel.value=cur;
 }
-
 async function load(){
-  const p = new URLSearchParams();
-  if($("survivors").checked) p.set("survivors","1");
-  if($("seedfilter").value) p.set("seed",$("seedfilter").value);
-  DATA = await (await fetch("/api/runs?"+p)).json();
-  const sf = $("statusfilter").value;
-  const rows = sf ? DATA.filter(r=>(r.lead_status||"new")===sf) : DATA;
-  render(rows);
-  $("csv").href = "/export.csv" + ($("seedfilter").value?("?seed="+encodeURIComponent($("seedfilter").value)):"");
+  const p=new URLSearchParams();
+  if($("seedfilter").value)p.set("seed",$("seedfilter").value);
+  DATA=await (await fetch("/api/runs?"+p)).json();
+  render();
+  $("csv").href="/export.csv"+($("seedfilter").value?("?seed="+encodeURIComponent($("seedfilter").value)):"");
 }
 
-function cell(v,un){return un?"-":v;}
-
-function render(rows){
-  const body = $("rows");
-  body.innerHTML = "";
-  $("empty").style.display = rows.length ? "none" : "block";
-  $("count").textContent = rows.length + " shown";
-  rows.forEach((run,i)=>{
-    const s = run.score, un = s.unverified;
-    const tr = document.createElement("tr");
-    tr.className = "row";
-    tr.innerHTML =
-      '<td><div class="cand">'+esc(run.candidate)+'</div><div class="kill">'+esc(run.kill_reason)+'</div></td>'+
-      '<td class="num">'+cell(s.demand,un)+'</td>'+
-      '<td class="num">'+cell(s.supply_weak,un)+'</td>'+
-      '<td class="num">'+cell(s.pay,un)+'</td>'+
-      '<td class="num">'+cell(s.reach,un)+'</td>'+
-      '<td class="num">'+cell(s.buildable,un)+'</td>'+
-      '<td class="num">'+run.ratio+'</td>'+
-      '<td class="num"><strong>'+esc(run.composite_display)+'</strong></td>'+
-      '<td><span class="band '+run.band+'">'+run.band+'</span></td>'+
-      '<td></td>';
-    tr.lastChild.appendChild(leadSelect(run));
-    tr.querySelectorAll("td").forEach((td,idx)=>{ if(idx<9) td.onclick=()=>toggle(run,tr); });
-    body.appendChild(tr);
-  });
+function render(){
+  const box=$("cards");box.innerHTML="";
+  const rows=DATA.filter(r=>FILT==="all"||verdict(r).k===FILT);
+  $("empty").style.display=DATA.length?"none":"block";
+  if(DATA.length && !rows.length){
+    box.innerHTML='<div class="empty">Nothing in this group.</div>';return;
+  }
+  rows.forEach(run=>box.appendChild(card(run)));
 }
 
-function leadSelect(run){
-  const sel = document.createElement("select");
-  sel.className = "lead-sel";
-  ["new","shortlist","chasing","rejected"].forEach(st=>{
-    const o=document.createElement("option");o.value=o.textContent=st;
-    if((run.lead_status||"new")===st)o.selected=true;sel.appendChild(o);
-  });
-  sel.onclick = (e)=>e.stopPropagation();
-  sel.onchange = async ()=>{
-    await fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({candidate:run.candidate,status:sel.value})});
-    run.lead_status = sel.value;
-    if($("statusfilter").value) load();
+function card(run){
+  const v=verdict(run);
+  const el=document.createElement("div");
+  el.className="card "+v.k;
+  el.innerHTML=
+    '<div class="toprow"><div class="name">'+esc(run.candidate)+'</div>'+
+    '<span class="pill '+v.k+'">'+v.label+'</span></div>'+
+    '<p class="blurb">'+esc(v.blurb)+'</p>'+
+    '<div class="actions"><div class="leadbtns"></div>'+
+    '<button class="seemore">See details ▾</button></div>'+
+    '<div class="detail"></div>';
+  el.querySelector(".leadbtns").appendChild(leadButtons(run));
+  const more=el.querySelector(".seemore"), det=el.querySelector(".detail");
+  more.onclick=()=>{
+    if(det.classList.contains("on")){det.classList.remove("on");more.textContent="See details ▾";return;}
+    more.textContent="Hide details ▴";
+    if(!det.dataset.loaded){fillDetail(run,det);det.dataset.loaded="1";}
+    det.classList.add("on");
   };
-  return sel;
+  return el;
 }
 
-async function toggle(run,tr){
-  const nx = tr.nextElementSibling;
-  if(nx && nx.classList.contains("detail")){ nx.remove(); return; }
-  const text = await (await fetch("/api/report?candidate="+encodeURIComponent(run.candidate)+"&depth="+encodeURIComponent(run.depth))).text();
-  const row = document.createElement("tr");
-  row.className = "detail";
-  row.innerHTML = '<td colspan="10"><pre>'+linkify(esc(text))+'</pre>'+
-    '<label class="field"><span style="font-family:var(--mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;">Your notes</span></label>'+
-    '<textarea class="notes" placeholder="Add a note — saved when you click away"></textarea>'+
-    '<span class="savednote" style="display:none;">saved</span></td>';
-  const ta = row.querySelector(".notes");
-  ta.value = run.lead_notes || "";
-  ta.onblur = async ()=>{
+const STATUSES=[["new","New"],["shortlist","Shortlist"],["chasing","Chasing"],["rejected","Rejected"]];
+function leadButtons(run){
+  const wrap=document.createElement("div");wrap.className="leadbtns";
+  STATUSES.forEach(([val,lab])=>{
+    const b=document.createElement("button");
+    b.className="leadbtn"+(((run.lead_status||"new")===val)?" on":"");
+    b.textContent=lab;
+    b.onclick=async()=>{
+      await fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({candidate:run.candidate,status:val})});
+      run.lead_status=val;
+      wrap.querySelectorAll(".leadbtn").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+    };
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+
+const SCORE_LABELS=[
+  ["demand","People searching",4],
+  ["supply_weak","Gap in competition",4],
+  ["pay","Signs people pay",3],
+  ["reach","Easy to reach them",3],
+  ["buildable","Nothing blocking",1],
+];
+async function fillDetail(run,det){
+  let html="";
+  if(!run.score.unverified){
+    html+='<div class="scores">';
+    SCORE_LABELS.forEach(([k,lab,max])=>{
+      const v=run.score[k], pct=Math.round(100*v/max);
+      html+='<div class="score"><div class="lab"><span>'+lab+'</span><span>'+v+' / '+max+'</span></div>'+
+            '<div class="meter"><i style="width:'+pct+'%"></i></div></div>';
+    });
+    html+='</div>';
+  }
+  det.innerHTML=html+'<pre>loading the full write-up…</pre>'+
+    '<div class="noterow"><span class="lab">Your notes</span><span class="saved">saved ✓</span></div>'+
+    '<textarea class="notes" placeholder="Jot anything here — saved automatically"></textarea>';
+  const pre=det.querySelector("pre");
+  const text=await (await fetch("/api/report?candidate="+encodeURIComponent(run.candidate)+"&depth="+encodeURIComponent(run.depth))).text();
+  pre.innerHTML=linkify(esc(text));
+  const ta=det.querySelector(".notes"); ta.value=run.lead_notes||"";
+  ta.onblur=async()=>{
     await fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({candidate:run.candidate,notes:ta.value})});
-    run.lead_notes = ta.value;
-    const s = row.querySelector(".savednote"); s.style.display="inline";
-    setTimeout(()=>s.style.display="none",1400);
+    run.lead_notes=ta.value;
+    const s=det.querySelector(".saved");s.style.display="inline";setTimeout(()=>s.style.display="none",1400);
   };
-  tr.after(row);
 }
 
+/* launch */
 function setMode(){
-  const verify = $("mode").value==="verify";
-  $("limitfield").style.display = verify ? "none":"flex";
-  $("seedlabel").textContent = verify ? "Niche — the exact phrase to deep-dive" : "Seed — an industry or theme";
-  $("seed").placeholder = verify ? "e.g. eicr expiry reminder app" : "e.g. UK trades";
+  const v=$("mode").value==="verify";
+  $("howmanyf").style.display=v?"none":"flex";
+  $("seed").placeholder=v?"e.g. eicr expiry reminder app":"e.g. small landlords";
 }
-
 async function run(){
-  const seed = $("seed").value.trim();
-  if(!seed){ $("seed").focus(); return; }
-  const mode = $("mode").value;
-  const payload = mode==="verify"
-    ? {mode:"verify", candidate:seed, country:$("country").value}
-    : {mode:"discover", seed:seed, limit:parseInt($("limit").value)||20, country:$("country").value};
-  $("go").disabled = true; $("preview").disabled = true;
-  $("runbanner").innerHTML = "";
-  const res = await (await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})).json();
-  if(res.error){ banner(res.error,"err"); $("go").disabled=false; $("preview").disabled=false; return; }
-  $("progress").classList.add("on");
-  watch(res.job_id);
+  const seed=$("seed").value.trim();
+  if(!seed){$("seed").focus();return;}
+  const mode=$("mode").value;
+  const payload=mode==="verify"
+    ?{mode:"verify",candidate:seed,country:$("country").value}
+    :{mode:"discover",seed:seed,limit:parseInt($("limit").value)||20,country:$("country").value};
+  $("go").disabled=true;$("donemsg").classList.remove("on");
+  const res=await (await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})).json();
+  if(res.error){done(res.error,true);$("go").disabled=false;return;}
+  $("prog").classList.add("on");watch(res.job_id);
 }
-
 function watch(id){
-  if(poll) clearInterval(poll);
-  poll = setInterval(async ()=>{
-    const j = await (await fetch("/api/job?id="+id)).json();
-    if(j.error){ clearInterval(poll); return; }
-    const pct = j.total ? Math.round(100*j.done/j.total) : 0;
-    $("barfill").style.width = pct+"%";
-    $("pmsg").textContent = j.status==="running" ? ("testing: "+(j.last||"...")) : j.status;
-    $("pcount").textContent = j.done+" / "+j.total;
-    if(j.status==="done" || j.status==="error"){
-      clearInterval(poll);
-      $("go").disabled=false; $("preview").disabled=false;
-      setTimeout(()=>$("progress").classList.remove("on"), 1200);
-      if(j.status==="error"){ banner("Run failed: "+j.error,"err"); }
-      else {
-        let msg = j.kind==="verify" ? "Done." : ("Done — "+j.survivors+" survived of "+j.done+" tested.");
-        if(j.stopped) msg += " Stopped early: "+j.stopped;
-        if(j.warning) msg += " "+j.warning;
-        banner(msg,"warn");
+  if(poll)clearInterval(poll);
+  poll=setInterval(async()=>{
+    const j=await (await fetch("/api/job?id="+id)).json();
+    if(j.error){clearInterval(poll);return;}
+    const pct=j.total?Math.round(100*j.done/j.total):0;
+    $("trackfill").style.width=pct+"%";
+    $("progmsg").textContent=j.status==="running"
+      ? ("Testing ideas… "+j.done+" of "+j.total+(j.last?"  ·  checking “"+j.last+"”":""))
+      : "Finishing…";
+    if(j.status==="done"||j.status==="error"){
+      clearInterval(poll);$("go").disabled=false;
+      setTimeout(()=>$("prog").classList.remove("on"),800);
+      if(j.status==="error"){done("Something went wrong: "+j.error,true);}
+      else{
+        let m = j.kind==="verify" ? "Done — see the result below."
+          : ("Done — tested "+j.done+", found "+j.survivors+" worth a look. (Most being “taken” is normal.)");
+        done(m,false);
       }
-      await loadSeeds(); await load();
+      await loadSeeds();await load();
     }
-  }, 1000);
+  },1000);
 }
-
-function banner(text,kind){ $("runbanner").innerHTML = '<div class="banner '+kind+'">'+esc(text)+'</div>'; }
+function done(msg,err){const d=$("donemsg");d.textContent=msg;d.className="done-msg on"+(err?" err":"");}
 
 async function preview(){
-  const seed = $("seed").value.trim();
-  if(!seed){ $("seed").focus(); return; }
-  const res = await (await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({seed:seed, limit:parseInt($("limit").value)||30})})).json();
-  if(res.error){ banner(res.error,"err"); return; }
-  banner("Would test "+res.candidates.length+" phrases: "+res.candidates.slice(0,8).join(" · ")+(res.candidates.length>8?" …":""),"warn");
+  const seed=$("seed").value.trim();if(!seed){$("seed").focus();return;}
+  const res=await (await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({seed:seed,limit:parseInt($("limit").value)||20})})).json();
+  if(res.error){done(res.error,true);return;}
+  done("It would test "+res.candidates.length+" ideas, like: "+res.candidates.slice(0,6).join(" · ")+(res.candidates.length>6?" …":"")+". Hit “Find gaps” to run them.",false);
 }
 
-$("go").onclick = run;
-$("preview").onclick = preview;
-$("mode").onchange = setMode;
-$("survivors").onchange = load;
-$("seedfilter").onchange = load;
-$("statusfilter").onchange = load;
+document.querySelectorAll(".chip").forEach(c=>{
+  if(c.id) return;
+  c.onclick=()=>{$("seed").value=c.textContent;$("seed").focus();};
+});
+$("go").onclick=run;
+$("preview").onclick=preview;
+$("mode").onchange=setMode;
+$("moretoggle").onclick=()=>{$("more").classList.toggle("on");
+  $("moretoggle").textContent=$("more").classList.contains("on")?"Fewer options ▴":"More options ▾";};
+$("seedfilter").onchange=load;
 $("seed").addEventListener("keydown",e=>{if(e.key==="Enter")run();});
-setMode(); loadProviders(); loadSeeds(); load();
+document.querySelectorAll(".filt").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".filt").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");FILT=b.dataset.f;render();
+});
+setMode();loadStatus();loadSeeds();load();
 </script>
 </body>
 </html>
