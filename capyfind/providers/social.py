@@ -84,8 +84,10 @@ class RedditProvider(SearchProvider):
 
     def why_unavailable(self) -> str:
         return (
-            "REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set -- create a free "
-            "'script' app at https://www.reddit.com/prefs/apps"
+            "REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET not set. Note the official "
+            "API now needs approval (Responsible Builder policy) -- the "
+            "reddit-web provider reaches Reddit through your web key with no "
+            "approval, and runs automatically once a web provider is set."
         )
 
     @property

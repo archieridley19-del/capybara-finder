@@ -15,6 +15,7 @@ from capyfind.providers.base import KIND_SOCIAL, KIND_WEB
 from capyfind.providers.forums import (
     TRADE_FORUMS,
     HackerNewsProvider,
+    RedditViaWebProvider,
     StackExchangeProvider,
     TradeForumProvider,
     keyword_terms,
@@ -105,10 +106,12 @@ class ProviderAvailabilityTests(unittest.TestCase):
     def test_trade_forums_cost_one_query_only(self):
         self.assertEqual(TradeForumProvider().max_queries, 1)
 
-    def test_reddit_explains_how_to_get_credentials(self):
+    def test_reddit_points_to_the_no_approval_path(self):
         from capyfind.providers.social import RedditProvider
 
-        self.assertIn("reddit.com/prefs/apps", RedditProvider().why_unavailable())
+        message = RedditProvider().why_unavailable()
+        self.assertIn("approval", message)
+        self.assertIn("reddit-web", message)
 
 
 class RegistryTests(unittest.TestCase):
@@ -116,7 +119,8 @@ class RegistryTests(unittest.TestCase):
         providers = build_providers()
         names = {p.name for p in providers.roles[KIND_SOCIAL]}
         self.assertEqual(
-            names, {"stackexchange", "hackernews", "reddit", "tradeforums"}
+            names,
+            {"stackexchange", "hackernews", "reddit", "reddit-web", "tradeforums"},
         )
 
     def test_free_sources_come_before_paid_ones(self):
@@ -139,7 +143,82 @@ class RegistryTests(unittest.TestCase):
     def test_describe_explains_missing_providers(self):
         text = "\n".join(build_providers().describe())
         self.assertIn("reddit", text)
-        self.assertIn("prefs/apps", text)
+        self.assertIn("approval", text)
+
+
+class RedditViaWebTests(unittest.TestCase):
+    """The no-approval Reddit path: search reddit.com through the web provider."""
+
+    class FakeWeb:
+        """A stand-in web provider that records the query it was handed."""
+
+        name = "fakeweb"
+        live = True
+
+        def __init__(self, results):
+            self._results = results
+            self.last_query = None
+
+        def available(self):
+            return True
+
+        def why_unavailable(self):
+            return "n/a"
+
+        def search(self, query, limit=10):
+            from capyfind.models import Retrieval
+
+            self.last_query = query
+            return self._results, Retrieval(
+                provider=self.name, query=query, role=KIND_SOCIAL,
+                n_results=len(self._results), ok=True, url="https://fakeweb/",
+            )
+
+    def test_unavailable_without_a_web_provider(self):
+        provider = RedditViaWebProvider(web=None)
+        self.assertFalse(provider.available())
+        self.assertIn("web search provider", provider.why_unavailable())
+
+    def test_applies_a_site_reddit_filter(self):
+        web = self.FakeWeb([result("t", "https://reddit.com/r/x/comments/1/")])
+        provider = RedditViaWebProvider(web=web)
+        provider.search("eicr expiry reminder", limit=5)
+        self.assertIn("site:reddit.com", web.last_query)
+        self.assertIn("eicr expiry reminder", web.last_query)
+
+    def test_restamps_provenance_but_keeps_reddit_url(self):
+        web = self.FakeWeb(
+            [result("t", "https://www.reddit.com/r/uklandlords/comments/1/x/")]
+        )
+        results, retrieval = RedditViaWebProvider(web=web).search("q", limit=5)
+        self.assertTrue(retrieval.ok)
+        self.assertEqual(results[0].provider, "reddit-web")
+        # The URL must survive untouched so the subreddit stays extractable.
+        self.assertIn("/r/uklandlords/", results[0].url)
+
+    def test_subreddit_is_extracted_for_reach(self):
+        web = self.FakeWeb(
+            [result("t", "https://www.reddit.com/r/smallbusinessuk/comments/1/x/")]
+        )
+        results, _ = RedditViaWebProvider(web=web).search("q")
+        venues = reach_evidence(results, [])
+        self.assertEqual(len(venues), 1)
+        self.assertIn("r/smallbusinessuk", venues[0].claim)
+
+    def test_failure_from_web_provider_is_raised(self):
+        from capyfind.models import Retrieval
+
+        class FailingWeb(self.FakeWeb):
+            def search(self, query, limit=10):
+                return [], Retrieval(
+                    provider="fw", query=query, role=KIND_SOCIAL,
+                    ok=False, error="429 rate limited",
+                )
+
+        _, retrieval = RedditViaWebProvider(web=FailingWeb([])).search("q")
+        # search() catches the raised error and records it, never silent.
+        self.assertFalse(retrieval.ok)
+        self.assertIn("429", retrieval.error)
 
 
 class ForumClassificationTests(unittest.TestCase):

@@ -21,7 +21,12 @@ from .base import (
     SearchProvider,
 )
 from .fixture import FixtureProvider
-from .forums import HackerNewsProvider, StackExchangeProvider, TradeForumProvider
+from .forums import (
+    HackerNewsProvider,
+    RedditViaWebProvider,
+    StackExchangeProvider,
+    TradeForumProvider,
+)
 from .social import AutocompleteProvider, RedditProvider, TrendsProvider
 from .web import BraveProvider, SerpApiProvider, SerperProvider
 
@@ -119,7 +124,11 @@ def build_providers(store: Store | None = None, use_fixtures: bool = False) -> P
             KIND_SOCIAL: [
                 StackExchangeProvider(store=store),
                 HackerNewsProvider(store=store),
+                # Official Reddit (needs approved credentials) and the
+                # no-approval path through the web index. Whichever is usable
+                # runs; if both are, duplicate threads dedupe by URL.
                 RedditProvider(store=store),
+                RedditViaWebProvider(store=store, web=web),
                 TradeForumProvider(store=store, web=web),
             ],
             KIND_TRENDS: [TrendsProvider(store=store)],

@@ -273,3 +273,53 @@ class TradeForumProvider(SearchProvider):
             if not result.snippet.startswith(result.domain):
                 result.snippet = f"{result.domain} | {result.snippet}"
         return results, retrieval.url or "web-provider"
+
+
+class RedditViaWebProvider(SearchProvider):
+    """Reddit threads reached through the web provider's site: filter.
+
+    Reddit's own API now sits behind an approval queue (the Responsible Builder
+    policy), and the old unauthenticated .json endpoints are rate-limited to
+    uselessness. But a general web index already crawls Reddit, so a
+    `site:reddit.com` search returns the two things this tool actually needs
+    from Reddit -- whether the ask shows up in threads, and which subreddits
+    those threads live in (the reach signal) -- with no Reddit credentials at
+    all.
+
+    Trade-off against the official API: no live comment counts, and coverage is
+    whatever the web index has rather than Reddit's full firehose. That is fine
+    for demand and reach; it is not a data feed.
+
+    This runs alongside the official RedditProvider, not instead of it. If a
+    user is later approved and sets credentials, both run and duplicate threads
+    are de-duplicated by URL downstream.
+    """
+
+    name = "reddit-web"
+    kind = KIND_SOCIAL
+    max_queries = 2
+
+    def __init__(self, store=None, web: SearchProvider | None = None) -> None:
+        super().__init__(store=store)
+        self.web = web
+
+    def available(self) -> bool:
+        return self.web is not None and self.web.available()
+
+    def why_unavailable(self) -> str:
+        if self.web is None:
+            return "needs a web search provider (set BRAVE_API_KEY or SERPER_API_KEY)"
+        return f"underlying web provider unavailable: {self.web.why_unavailable()}"
+
+    def _fetch(self, query: str, limit: int) -> tuple[list[SearchResult], str]:
+        results, retrieval = self.web.search(f"site:reddit.com {query}", limit=limit)
+        if not retrieval.ok:
+            from ..http import RetrievalError
+
+            raise RetrievalError(retrieval.error or "reddit-via-web search failed")
+
+        # Re-stamp provenance. The reddit.com URL is preserved untouched, so the
+        # subreddit extractor in signals.py can still read r/<name> from it.
+        for result in results:
+            result.provider = self.name
+        return results, retrieval.url or "web-provider"

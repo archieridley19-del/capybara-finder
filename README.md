@@ -118,7 +118,8 @@ covers a niche audience.
 | web | SerpAPI | `SERPAPI_API_KEY` | paid |
 | social | Software Recommendations (Stack Exchange) | none | **free** |
 | social | Hacker News (Algolia) | none | **free** |
-| social | Reddit official API | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | free |
+| social | Reddit (via web index) | uses the web provider | 1–2 search credits |
+| social | Reddit official API | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | needs approval |
 | social | UK trade forums | uses the web provider | 1 search credit |
 | suggest | Google autocomplete | none | **free** |
 | trends | Google Trends | `CAPYFIND_ENABLE_TRENDS=1` | stub |
@@ -138,7 +139,8 @@ free ones run first:
 - **Hacker News** catches `Show HN` launches and abandoned attempts. For the
   bank-statement anchor it surfaces two competing launches on its own.
 - **Reddit** covers the trade subreddits, and is the main source of *named
-  reach venues* — `r/uklandlords` is a distribution channel, HN is not.
+  reach venues* — `r/uklandlords` is a distribution channel, HN is not. It is
+  reached two ways (see below); at least one works with just a web key.
 - **UK trade forums** — LandlordZONE, AccountingWEB, UK Business Forums,
   Screwfix Community, PropertyTribes, MoneySavingExpert — are where sole
   traders actually post, and they are on none of the above. They have no APIs,
@@ -151,15 +153,27 @@ are filtered by term overlap — without that, a search for certificate expiry
 returns threads about Groupon's business model, and noise becomes "demand
 evidence".
 
-### Reddit setup
+### Reaching Reddit (two ways)
 
-Create a free **script** app at
-[reddit.com/prefs/apps](https://www.reddit.com/prefs/apps), then:
+**Default — through your web key, no Reddit account.** As of 2026 the official
+Reddit API sits behind an approval queue (their Responsible Builder policy) and
+the old unauthenticated `.json` endpoints are rate-limited to uselessness. So
+the default path searches Reddit through whichever web provider you have, with a
+`site:reddit.com` filter. It activates automatically once `BRAVE_API_KEY` (or
+another web key) is set — nothing else to do. This yields the demand threads and
+the subreddit reach venues; it does not yield live comment counts.
+
+**Optional — the official API, if you get approved.** Register a **script** app
+at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps); approval is not
+guaranteed and can take days. If granted:
 
 ```bash
 setx REDDIT_CLIENT_ID "your-client-id"
 setx REDDIT_CLIENT_SECRET "your-secret"
 ```
+
+Both run side by side and duplicate threads are de-duplicated by URL, so there
+is no harm in having both.
 
 ### Why a web key is still required
 
@@ -211,7 +225,7 @@ personal trainers. Anything else falls back to generic frames — use
 python -m unittest discover -s tests -t . -v
 ```
 
-96 tests, all offline.
+101 tests, all offline.
 
 ## What this tool is not
 
