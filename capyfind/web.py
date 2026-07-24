@@ -463,9 +463,12 @@ PAGE = r"""<!doctype html>
       <span class="lbl">Try:</span>
       <button class="chip">UK trades</button>
       <button class="chip">small landlords</button>
-      <button class="chip">Etsy sellers</button>
-      <button class="chip">accountants</button>
-      <button class="chip">personal trainers</button>
+      <button class="chip">childminders</button>
+      <button class="chip">dog groomers</button>
+      <button class="chip">driving instructors</button>
+      <button class="chip">caterers</button>
+      <button class="chip">home care</button>
+      <button class="chip">holiday lets</button>
     </div>
     <button class="moretoggle" id="moretoggle">More options ▾</button>
     <div class="more" id="more">

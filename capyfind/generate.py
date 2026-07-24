@@ -153,6 +153,186 @@ VERTICALS: dict[str, dict[str, list]] = {
         ],
         "conversions": [("paper par-q", "digital form"), ("session log", "invoice")],
     },
+    "childminders": {
+        "aliases": ["childminders", "childminder", "nursery", "nurseries",
+                    "early years", "childcare", "preschool"],
+        "regulations": [
+            "eyfs", "ofsted registration", "paediatric first aid", "dbs check",
+            "safeguarding training", "food hygiene rating", "two year old funding",
+        ],
+        "documents": [
+            "accident record", "incident report", "permission form",
+            "daily diary", "learning journal", "medication record",
+            "risk assessment", "existing injury form",
+        ],
+        "professions": ["childminder", "nursery manager", "nanny"],
+        "tasks": [
+            "tracking child attendance", "invoicing parents",
+            "tracking funded hours", "recording observations",
+            "tracking staff ratios", "chasing unpaid fees",
+        ],
+        "conversions": [("attendance register", "invoice"),
+                        ("paper observations", "learning journal")],
+    },
+    "dog groomers": {
+        "aliases": ["dog groomers", "dog grooming", "pet groomers", "dog walkers",
+                    "pet sitters", "dog daycare", "pet care"],
+        "regulations": [
+            "animal boarding licence", "defra licence", "canine first aid",
+            "public liability insurance", "rabies vaccination record",
+        ],
+        "documents": [
+            "grooming consent form", "client pet record", "vaccination record",
+            "incident report", "aftercare notes", "matted coat waiver",
+        ],
+        "professions": ["dog groomer", "dog walker", "pet sitter"],
+        "tasks": [
+            "booking appointments", "tracking vaccination expiry",
+            "chasing no shows", "invoicing clients",
+            "tracking repeat customers", "managing waiting lists",
+        ],
+        "conversions": [("paper booking diary", "calendar"),
+                        ("client records", "spreadsheet")],
+    },
+    "driving instructors": {
+        "aliases": ["driving instructors", "driving instructor", "adi",
+                    "driving school", "driving lessons"],
+        "regulations": [
+            "adi registration", "standards check", "dbs check",
+            "business use car insurance", "dvsa registration",
+        ],
+        "documents": [
+            "pupil record", "lesson plan", "progress record",
+            "pdi training log", "pupil declaration", "test booking",
+        ],
+        "professions": ["driving instructor", "adi", "pdi"],
+        "tasks": [
+            "scheduling lessons", "tracking pupil progress",
+            "chasing payments", "tracking test pass rates",
+            "managing cancellations", "tracking lesson hours",
+        ],
+        "conversions": [("lesson diary", "invoice"),
+                        ("pupil progress", "report")],
+    },
+    "mobile hairdressers": {
+        "aliases": ["mobile hairdressers", "mobile hairdresser", "hairdresser",
+                    "beautician", "nail technician", "mobile beauty", "salon"],
+        "regulations": [
+            "public liability insurance", "patch test record",
+            "local authority registration", "treatment insurance",
+            "cosmetic product safety",
+        ],
+        "documents": [
+            "client consultation form", "patch test record", "consent form",
+            "aftercare advice", "allergy record", "colour record",
+        ],
+        "professions": ["mobile hairdresser", "beautician", "nail technician"],
+        "tasks": [
+            "booking appointments", "tracking patch test dates",
+            "chasing no shows", "tracking product stock",
+            "invoicing clients", "managing repeat bookings",
+        ],
+        "conversions": [("appointment book", "calendar"),
+                        ("client cards", "spreadsheet")],
+    },
+    "cleaners": {
+        "aliases": ["cleaners", "cleaning company", "domestic cleaners",
+                    "commercial cleaning", "end of tenancy cleaning", "cleaning business"],
+        "regulations": [
+            "coshh assessment", "public liability insurance", "dbs check",
+            "risk assessment", "health and safety policy",
+        ],
+        "documents": [
+            "cleaning checklist", "coshh sheet", "risk assessment",
+            "key holding log", "job sheet", "method statement",
+        ],
+        "professions": ["cleaner", "cleaning company owner"],
+        "tasks": [
+            "scheduling jobs", "tracking staff rotas", "invoicing clients",
+            "chasing payments", "tracking cleaning supplies", "key management",
+        ],
+        "conversions": [("paper timesheet", "payroll"), ("job sheet", "invoice")],
+    },
+    "caterers": {
+        "aliases": ["caterers", "catering", "food business", "market stall",
+                    "street food", "home bakery", "cafe", "takeaway"],
+        "regulations": [
+            "food hygiene rating", "haccp", "allergen labelling", "natasha's law",
+            "food safety management", "level 2 food hygiene", "sfbb",
+        ],
+        "documents": [
+            "allergen matrix", "haccp plan", "temperature log",
+            "cleaning schedule", "supplier record", "food safety diary",
+            "opening checklist",
+        ],
+        "professions": ["caterer", "baker", "street food vendor", "cafe owner"],
+        "tasks": [
+            "tracking allergens", "costing recipes", "tracking temperature checks",
+            "managing orders", "invoicing events", "tracking ingredient stock",
+        ],
+        "conversions": [("recipe", "allergen matrix"), ("orders", "invoice")],
+    },
+    "photographers": {
+        "aliases": ["photographers", "photographer", "videographer",
+                    "wedding photographer", "photography business"],
+        "regulations": [
+            "public liability insurance", "gdpr consent", "model release",
+            "drone caa registration", "copyright registration",
+        ],
+        "documents": [
+            "photography contract", "model release form", "booking form",
+            "shot list", "image licence", "usage agreement",
+        ],
+        "professions": ["photographer", "videographer", "wedding photographer"],
+        "tasks": [
+            "booking shoots", "managing contracts", "tracking deposits",
+            "delivering galleries", "chasing final payments",
+            "tracking usage rights",
+        ],
+        "conversions": [("enquiry", "contract"), ("shoot list", "invoice")],
+    },
+    "home care": {
+        "aliases": ["home care", "domiciliary care", "care agency",
+                    "care provider", "carers", "care company"],
+        "regulations": [
+            "cqc registration", "dbs check", "care certificate",
+            "medication training", "safeguarding training",
+            "moving and handling training",
+        ],
+        "documents": [
+            "care plan", "mar chart", "risk assessment", "daily care notes",
+            "incident report", "medication record", "body map",
+        ],
+        "professions": ["care worker", "care agency manager", "carer"],
+        "tasks": [
+            "scheduling visits", "tracking staff training expiry",
+            "recording care notes", "tracking medication", "managing rotas",
+            "tracking carer mileage",
+        ],
+        "conversions": [("paper care notes", "digital record"),
+                        ("rota", "payroll")],
+    },
+    "holiday lets": {
+        "aliases": ["holiday lets", "holiday let", "airbnb hosts", "airbnb host",
+                    "short term let", "holiday cottage", "serviced accommodation"],
+        "regulations": [
+            "gas safety certificate", "eicr", "fire risk assessment", "epc",
+            "pat testing", "tv licence", "furniture fire safety",
+        ],
+        "documents": [
+            "welcome book", "cleaning checklist", "inventory",
+            "guest agreement", "damage report", "changeover checklist",
+        ],
+        "professions": ["holiday let owner", "airbnb host",
+                        "serviced accommodation operator"],
+        "tasks": [
+            "managing bookings", "scheduling changeovers",
+            "tracking certificate expiry", "chasing reviews",
+            "tracking occupancy", "managing cleaners",
+        ],
+        "conversions": [("booking calendar", "spreadsheet"),
+                        ("expenses", "tax return")],
+    },
 }
 
 GENERIC = {

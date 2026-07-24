@@ -118,6 +118,40 @@ class GenerationTests(unittest.TestCase):
         phrases = generate_candidates("small landlords", limit=200)
         self.assertEqual(len(phrases), len(set(phrases)))
 
+    def test_every_builtin_vertical_is_reachable_and_rich(self):
+        from capyfind.generate import VERTICALS
+
+        for name, data in VERTICALS.items():
+            # Its own name should route back to its lexicon, not to generic.
+            matched, _ = match_vertical(name)
+            self.assertEqual(matched, name, f"{name!r} did not match itself")
+            # And every alias should resolve to a real (non-generic) lexicon.
+            for alias in data["aliases"]:
+                m, _ = match_vertical(alias)
+                self.assertNotEqual(m, "generic", f"alias {alias!r} fell through")
+            # It should generate a useful pile of concrete, unique candidates.
+            phrases = generate_candidates(name, limit=200)
+            self.assertGreaterEqual(
+                len(phrases), 40, f"{name!r} generated only {len(phrases)}"
+            )
+            self.assertEqual(len(phrases), len(set(phrases)), f"{name!r} has dupes")
+            self.assertNotIn(name, phrases, f"{name!r} emitted the bare seed")
+
+    def test_new_verticals_match_common_phrasings(self):
+        for phrase, expected in [
+            ("childminders", "childminders"),
+            ("dog groomer", "dog groomers"),
+            ("driving instructor", "driving instructors"),
+            ("mobile hairdresser", "mobile hairdressers"),
+            ("cleaning company", "cleaners"),
+            ("street food", "caterers"),
+            ("wedding photographer", "photographers"),
+            ("domiciliary care", "home care"),
+            ("airbnb host", "holiday lets"),
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertEqual(match_vertical(phrase)[0], expected)
+
     def test_tasks_file_is_honoured(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "tasks.txt"
