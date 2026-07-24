@@ -358,6 +358,43 @@ class RatioTests(unittest.TestCase):
         self.assertEqual(run.ratio, 1.0)
 
 
+class SaturatedCategoryTests(unittest.TestCase):
+    """Commodity horizontal categories must reject regardless of what a
+    phrase-by-phrase search happens to surface."""
+
+    def test_booking_is_flagged(self):
+        from capyfind.scoring import saturated_category
+
+        self.assertIsNotNone(saturated_category("booking appointments app"))
+        self.assertEqual(saturated_category("online booking system")[0], "booking / scheduling")
+
+    def test_invoicing_is_flagged(self):
+        from capyfind.scoring import saturated_category
+
+        self.assertEqual(saturated_category("chasing unpaid invoices app")[0], "invoicing")
+
+    def test_real_niches_are_not_flagged(self):
+        from capyfind.scoring import saturated_category
+
+        for phrase in (
+            "eicr expiry reminder app",
+            "allergen matrix generator",
+            "cqc registration record",
+            "dog grooming booking app",  # vertical qualifier => let it be scored
+        ):
+            self.assertIsNone(saturated_category(phrase), phrase)
+
+    def test_saturated_candidate_rejects_despite_strong_demand(self):
+        run = verified_run("booking appointments app")
+        run.signals.append(Signal("demand", "huge demand", 4.0, [evidence()]))
+        run.signals.append(Signal("pay", "people pay", 3.0, [evidence()]))
+        run.reach_venues = [evidence("r/x", "https://reddit.com/r/x")]
+        run = finalise(run)
+        self.assertEqual(run.score.supply_weak, 0)
+        self.assertEqual(run.score.composite, 0)
+        self.assertEqual(run.band, BAND_REJECT)
+
+
 class ScoreDisplayTests(unittest.TestCase):
     def test_max_composite_is_144(self):
         self.assertEqual(Score().max_composite, 144)

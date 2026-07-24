@@ -72,6 +72,61 @@ ANCHOR_PROMPT = "\n".join(
 )
 
 
+#: Commodity horizontal categories that are saturated no matter the wording.
+#: The giants (Calendly, Xero...) rarely rank for the exact long-tail phrase, so
+#: a phrase-by-phrase supply check misses them and wrongly reads the field as
+#: open. This is calibration, same idea as ANCHORS: known-saturated => reject.
+SATURATED_CATEGORIES: dict[str, tuple[tuple[str, ...], str]] = {
+    "booking / scheduling": (
+        ("booking appointment", "appointment booking", "appointment scheduling",
+         "online booking", "booking system", "scheduling app", "appointment app",
+         "appointment reminder", "book appointment", "class booking"),
+        "Calendly, Acuity, Cal.com, SimplyBook",
+    ),
+    "invoicing": (
+        ("invoice", "invoicing"),
+        "Xero, QuickBooks, FreshBooks, Wave",
+    ),
+    "CRM": (
+        ("crm", "customer relationship"),
+        "HubSpot, Pipedrive, Zoho",
+    ),
+    "to-do / task list": (
+        ("to do list", "to-do list", "todo app", "task manager", "task list app"),
+        "Todoist, TickTick, Microsoft To Do",
+    ),
+    "note taking": (
+        ("note taking", "notes app", "note app"),
+        "Notion, Evernote, OneNote",
+    ),
+    "time tracking": (
+        ("time tracking", "timesheet app", "time tracker"),
+        "Toggl, Clockify, Harvest",
+    ),
+    "expense tracking": (
+        ("expense tracker", "expense tracking", "expense report", "receipt scanner"),
+        "Expensify, QuickBooks, Dext",
+    ),
+    "email marketing": (
+        ("email marketing", "newsletter app", "email campaign"),
+        "Mailchimp, Brevo, ConvertKit",
+    ),
+    "generic scheduling / rota": (
+        ("rota app", "staff scheduling", "shift planner", "shift scheduling"),
+        "Deputy, When I Work, Rotaready",
+    ),
+}
+
+
+def saturated_category(candidate: str) -> tuple[str, str] | None:
+    """If the phrase is a commodity horizontal category, return (name, examples)."""
+    text = candidate.lower()
+    for name, (triggers, incumbents) in SATURATED_CATEGORIES.items():
+        if any(trigger in text for trigger in triggers):
+            return name, incumbents
+    return None
+
+
 def _cap(value: float, maximum: int) -> int:
     return max(0, min(maximum, int(value)))
 
@@ -93,6 +148,11 @@ def score_supply_weakness(run: Run) -> tuple[int, str]:
     polished, affordable, actively-maintained, correctly-targeted product
     counts as strong supply -- and one of those is enough to close the niche.
     """
+    saturated = saturated_category(run.candidate)
+    if saturated:
+        name, incumbents = saturated
+        return 0, f"commodity '{name}' category, dominated by {incumbents}"
+
     if run.polished_competitors:
         names = ", ".join(c.name[:40] for c in run.polished_competitors[:3])
         return 0, f"polished on-target competitor(s) present: {names}"

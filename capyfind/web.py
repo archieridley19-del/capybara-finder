@@ -87,6 +87,11 @@ class JobManager:
                     country=country,
                     buyer_size=buyer_size,
                     store=self.store,
+                    # Re-score every time from the browser, so a re-run always
+                    # reflects the current logic instead of showing stale stored
+                    # verdicts. Search results are still cached, so this does not
+                    # re-spend credits.
+                    resume=False,
                     on_progress=progress,
                 )
                 self._update(
