@@ -618,6 +618,13 @@ let DATA=[], FILT="all", MODE="discover", poll=null;
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function linkify(s){return s.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');}
+function searchLinks(phrase){const q=encodeURIComponent(phrase);return [
+  ["Google","https://www.google.com/search?q="+q],
+  ["Reddit","https://www.google.com/search?q="+encodeURIComponent(phrase+" reddit")],
+  ["Trends","https://trends.google.com/trends/explore?q="+q],
+  ["Product Hunt","https://www.producthunt.com/search?q="+q],
+  ["Chrome store","https://chromewebstore.google.com/search/"+q],
+];}
 
 function verdict(run){
   const kr=(run.kill_reason||"").toLowerCase();
@@ -685,7 +692,12 @@ async function fillDetail(run,det){let html="";
     SCORE_LABELS.forEach(([k,lab,max])=>{const v=run.score[k],pct=Math.round(100*v/max);
       html+='<div class="score"><div class="lab"><span>'+lab+'</span><span>'+v+' / '+max+'</span></div>'+
             '<div class="meter"><i style="width:'+pct+'%"></i></div></div>';});html+='</div>';}
-  det.innerHTML=html+'<pre>loading the full write-up…</pre>'+
+  const links=searchLinks(run.candidate).map(([n,u])=>
+    '<a href="'+u+'" target="_blank" rel="noopener noreferrer" class="chip" style="text-decoration:none;">'+n+' ↗</a>').join("");
+  det.innerHTML=html+
+    '<div style="font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Check it yourself</div>'+
+    '<div class="chips" style="margin:0 0 14px;">'+links+'</div>'+
+    '<pre>loading the full write-up…</pre>'+
     '<div style="font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Your notes<span class="saved">saved ✓</span></div>'+
     '<textarea class="notes" placeholder="Jot anything here — saved automatically"></textarea>';
   const pre=det.querySelector("pre");

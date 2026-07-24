@@ -43,19 +43,25 @@ DEPTHS = {"shallow": SHALLOW, "deep": DEEP}
 
 
 def web_query_plan(candidate: str) -> list[str]:
+    # First query is the bare phrase (what a user actually types); the rest
+    # surface competitors and their pricing so supply can be judged.
     return [
         candidate,
-        f"{candidate} software",
+        f"{candidate} app",
         f"{candidate} pricing",
-        f"best {candidate} tool",
+        f"best {candidate} software",
     ]
 
 
 def social_query_plan(candidate: str) -> list[str]:
+    # Probes ordered by value: the bare ask, explicit tool-seeking, then the
+    # strongest buy signal there is -- people complaining an existing tool
+    # costs too much or asking for a cheaper alternative.
     return [
         candidate,
-        f"is there a tool for {candidate}",
-        f"{candidate} alternative expensive",
+        f"is there an app for {candidate}",
+        f"cheaper alternative to {candidate}",
+        f"why is there no app for {candidate}",
     ]
 
 
